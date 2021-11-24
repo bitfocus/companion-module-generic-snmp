@@ -1,9 +1,9 @@
 {
   "name": "generic-snmp",
-  "version": "0.0.0-development",
+  "version": "1.0.0",
   "description": "A generic SNMP module for Companion",
   "manufacturer": "Generic",
-	"product": "SNMP Requests",
+  "product": "SNMP Requests",
   "keywords": [
     "Protocol",
     "Generic"
