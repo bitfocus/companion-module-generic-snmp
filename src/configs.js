@@ -97,7 +97,7 @@ module.exports = {
 					{ id: 'md5', label: 'MD5 message authentication (HMAC-MD5-96)' },
 					{ id: 'sha', label: 'SHA message authentication (HMAC-SHA-96)' },
 				],
-				default: 'none',
+				default: 'md5',
 				isVisible: ({ version, securityLevel }) =>
 					version === 'v3' && (securityLevel === 'authNoPriv' || securityLevel === 'authPriv'),
 			},
@@ -121,7 +121,7 @@ module.exports = {
 					{ id: 'aes256b', label: '256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localiztaion' },
 					{ id: 'aes256r', label: '256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion' },
 				],
-				default: 'none',
+				default: 'des',
 				isVisible: ({ version, securityLevel }) => version === 'v3' && securityLevel === 'authPriv',
 			},
 			{
