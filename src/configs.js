@@ -98,7 +98,8 @@ module.exports = {
 					{ id: 'sha', label: 'SHA message authentication (HMAC-SHA-96)' },
 				],
 				default: 'none',
-				isVisible: ({ version, securityLevel }) => version === 'v3' && (securityLevel === 'authNoPriv' || securityLevel === 'authPriv'),
+				isVisible: ({ version, securityLevel }) =>
+					version === 'v3' && (securityLevel === 'authNoPriv' || securityLevel === 'authPriv'),
 			},
 			{
 				type: 'textinput',
@@ -106,7 +107,8 @@ module.exports = {
 				label: 'Auth Key',
 				width: 6,
 				default: '',
-				isVisible: ({ version, securityLevel }) => version === 'v3' && (securityLevel === 'authNoPriv' || securityLevel === 'authPriv'),
+				isVisible: ({ version, securityLevel }) =>
+					version === 'v3' && (securityLevel === 'authNoPriv' || securityLevel === 'authPriv'),
 			},
 			{
 				type: 'dropdown',
