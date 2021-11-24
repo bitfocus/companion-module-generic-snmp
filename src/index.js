@@ -37,7 +37,7 @@ class Instance extends instance_skel {
 
 		this.disconnectAgent()
 
-		if (ip === undefined) {
+		if (ip === undefined || ip === '') {
 			this.log('warn', 'Please configure your instance')
 			this.status(this.STATUS_UNKNOWN, 'Missing configuration')
 			return
@@ -51,7 +51,7 @@ class Instance extends instance_skel {
 				version: version === 'v1' ? snmp.Version1 : snmp.Version2c,
 			}
 
-			if (community === '') {
+			if (community === undefined || community === '') {
 				this.log('warn', 'When using SNMP v1 or v2c please specify a community.')
 				this.status(this.STATUS_UNKNOWN, 'Missing community')
 				return
@@ -65,13 +65,13 @@ class Instance extends instance_skel {
 		// create v3 session
 		const { engineID, username, securityLevel, authProtocol, authKey, privProtocol, privKey } = this.config
 
-		if (engineID === '') {
+		if (engineID === undefined || engineID === '') {
 			this.log('warn', 'When using SNMP v2 please specify an Engine ID.')
 			this.status(this.STATUS_UNKNOWN, 'Missing Engine ID')
 			return
 		}
 
-		if (username === '') {
+		if (username === undefined || username === '') {
 			this.log('warn', 'When using SNMP v2 please specify an User Name.')
 			this.status(this.STATUS_UNKNOWN, 'Missing User Name')
 			return
@@ -88,7 +88,7 @@ class Instance extends instance_skel {
 		}
 
 		if (securityLevel !== 'noAuthNoPriv') {
-			if (authKey === '') {
+			if (authKey === undefined || authKey === '') {
 				this.log('warn', 'please specify an Auth Key when Security level is authNoPriv or authPriv.')
 				this.status(this.STATUS_UNKNOWN, 'Missing Auth Key')
 				return
@@ -98,7 +98,7 @@ class Instance extends instance_skel {
 			user.authKey = authKey
 
 			if (securityLevel == 'authPriv') {
-				if (privKey === '') {
+				if (privKey === undefined || privKey === '') {
 					this.log('warn', 'Please specify a Priv Key when Security level is authPriv.')
 					this.status(this.STATUS_UNKNOWN, 'Missing Priv Key')
 					return
