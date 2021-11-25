@@ -33,82 +33,77 @@ class Instance extends instance_skel {
 	}
 
 	connectAgent() {
-		const { ip, port, version } = this.config
-
 		this.disconnectAgent()
 
-		if (ip === undefined || ip === '') {
+		if (this.config.ip === undefined || this.config.ip === '') {
 			this.log('warn', 'Please configure your instance')
 			this.status(this.STATUS_UNKNOWN, 'Missing configuration')
 			return
 		}
 
 		// create v1/v2c session
-		if (version === 'v1' || version === 'v2c') {
-			const { community } = this.config
+		if (this.config.version === 'v1' || this.config.version === 'v2c') {
 			const options = {
-				port,
-				version: version === 'v1' ? snmp.Version1 : snmp.Version2c,
+				port: this.config.port,
+				version: this.config.version === 'v1' ? snmp.Version1 : snmp.Version2c,
 			}
 
-			if (community === undefined || community === '') {
+			if (this.config.community === undefined || this.config.community === '') {
 				this.log('warn', 'When using SNMP v1 or v2c please specify a community.')
 				this.status(this.STATUS_UNKNOWN, 'Missing community')
 				return
 			}
 
-			this.session = snmp.createSession(ip, community, options)
+			this.session = snmp.createSession(this.config.ip, this.config.community, options)
 			this.status(this.STATUS_OK)
 			return
 		}
 
 		// create v3 session
-		const { engineID, username, securityLevel, authProtocol, authKey, privProtocol, privKey } = this.config
-
-		if (engineID === undefined || engineID === '') {
+		if (this.config.engineID === undefined || this.config.engineID === '') {
 			this.log('warn', 'When using SNMP v2 please specify an Engine ID.')
 			this.status(this.STATUS_UNKNOWN, 'Missing Engine ID')
 			return
 		}
 
-		if (username === undefined || username === '') {
+		if (this.config.username === undefined || this.config.username === '') {
 			this.log('warn', 'When using SNMP v2 please specify an User Name.')
 			this.status(this.STATUS_UNKNOWN, 'Missing User Name')
 			return
 		}
 
 		const options = {
-			port,
-			engineID,
+			port: this.config.port,
+			engineID: this.config.engineID,
 			version: snmp.Version3,
 		}
 		const user = {
-			name: username,
-			level: snmp.SecurityLevel[securityLevel],
+			name: this.config.username,
+			level: snmp.SecurityLevel[this.config.securityLevel],
 		}
 
-		if (securityLevel !== 'noAuthNoPriv') {
-			if (authKey === undefined || authKey === '') {
+		if (this.config.securityLevel !== 'noAuthNoPriv') {
+			if (this.config.authKey === undefined || this.config.authKey === '') {
 				this.log('warn', 'please specify an Auth Key when Security level is authNoPriv or authPriv.')
 				this.status(this.STATUS_UNKNOWN, 'Missing Auth Key')
 				return
 			}
 
-			user.authProtocol = snmp.AuthProtocols[authProtocol]
-			user.authKey = authKey
+			user.authProtocol = snmp.AuthProtocols[this.config.authProtocol]
+			user.authKey = this.config.authKey
 
-			if (securityLevel == 'authPriv') {
-				if (privKey === undefined || privKey === '') {
+			if (this.config.securityLevel == 'authPriv') {
+				if (this.config.privKey === undefined || this.config.privKey === '') {
 					this.log('warn', 'Please specify a Priv Key when Security level is authPriv.')
 					this.status(this.STATUS_UNKNOWN, 'Missing Priv Key')
 					return
 				}
-				user.privProtocol = snmp.PrivProtocols[privProtocol]
-				user.privKey = privKey
+				user.privProtocol = snmp.PrivProtocols[this.config.privProtocol]
+				user.privKey = this.config.privKey
 			}
 		}
 
-		this.session = snmp.createV3Session(ip, user, options)
+		this.session = snmp.createV3Session(this.config.ip, user, options)
 		this.status(this.STATUS_OK)
 	}
 
