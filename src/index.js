@@ -119,16 +119,17 @@ class Instance extends instance_skel {
 		}
 	}
 
-	setOid(oid, type, value) {
-		const varbinds = [
-			{
-				oid,
-				type: snmp.ObjectType[type],
-				value,
-			},
-		]
+	parse(value) {
+		if (value.includes('$(')) {
+			this.parseVariables(value, (parsed) => {
+				value = parsed
+			})
+		}
+		return value
+	}
 
-		this.session.set(varbinds, (error) => {
+	setOid(oid, type, value) {
+		this.session.set([{ oid, type, value }], (error) => {
 			if (error) {
 				this.log('error', error.toString())
 			}

@@ -1,3 +1,5 @@
+const snmp = require('net-snmp')
+
 module.exports = {
 	initActions() {
 		const actions = {}
@@ -21,7 +23,7 @@ module.exports = {
 				},
 			],
 			callback: ({ options: { oid, value } }) => {
-				this.setOid(oid, 'OctetString', value)
+				this.setOid(this.parse(oid), snmp.ObjectType.OctetString, this.parse(value))
 			},
 		}
 
@@ -40,13 +42,13 @@ module.exports = {
 					label: 'Type',
 					id: 'type',
 					choices: [
-						{ id: 'Integer', label: 'Integer' },
-						{ id: 'Counter', label: 'Counter' },
-						{ id: 'Counter32', label: 'Counter32' },
-						{ id: 'Gauge', label: 'Gauge' },
-						{ id: 'Gauge32', label: 'Gauge32' },
-						{ id: 'TimeTicks', label: 'TimeTicks' },
-						{ id: 'Unsigned32', label: 'Unsigned32' },
+						{ id: snmp.ObjectType.Integer, label: 'Integer' },
+						{ id: snmp.ObjectType.Counter, label: 'Counter' },
+						{ id: snmp.ObjectType.Counter32, label: 'Counter32' },
+						{ id: snmp.ObjectType.Gauge, label: 'Gauge' },
+						{ id: snmp.ObjectType.Gauge32, label: 'Gauge32' },
+						{ id: snmp.ObjectType.TimeTicks, label: 'TimeTicks' },
+						{ id: snmp.ObjectType.Unsigned32, label: 'Unsigned32' },
 					],
 					default: 'Integer',
 				},
@@ -58,7 +60,14 @@ module.exports = {
 				},
 			],
 			callback: ({ options: { oid, type, value } }) => {
-				this.setOid(oid, type, parseInt(value))
+				const intValue = parseInt(this.parse(value))
+
+				if (Number.isNaN(intValue)) {
+					this.log('warn', `Value "${intValue}" is not an number. SNMP message not sent.`)
+					return
+				}
+
+				this.setOid(this.parse(oid), type, intValue)
 			},
 		}
 
@@ -73,15 +82,34 @@ module.exports = {
 					required: true,
 				},
 				{
-					type: 'dropdown',
-					label: 'Value',
+					type: 'textwithvariables',
+					label: 'Value (true/false, yes/no)',
 					id: 'value',
-					choices: [{ false: 'False' }, { true: 'True' }],
-					default: 'false',
+					default: 'true',
 				},
 			],
 			callback: ({ options: { oid, value } }) => {
-				this.setOid(oid, 'Boolean', value === 'true')
+				const parsedValue = this.parse(value).trim().toLocaleLowerCase()
+				let booleanValue = false
+
+				switch (parsedValue) {
+					case 'true':
+					case 'yes': {
+						booleanValue = true
+						break
+					}
+					case 'false':
+					case 'no': {
+						booleanValue = false
+						break
+					}
+					default: {
+						this.log('warn', `Value "${parsedValue}" is not an boolean. SNMP message not sent.`)
+						return
+					}
+				}
+
+				this.setOid(this.parse(oid), snmp.ObjectType.Boolean, booleanValue)
 			},
 		}
 
@@ -104,7 +132,7 @@ module.exports = {
 				},
 			],
 			callback: ({ options: { oid, value } }) => {
-				this.setOid(oid, 'IpAddress', value)
+				this.setOid(this.parse(oid), snmp.ObjectType.IpAddress, this.parse(value))
 			},
 		}
 
@@ -127,7 +155,7 @@ module.exports = {
 				},
 			],
 			callback: ({ options: { oid, value } }) => {
-				this.setOid(oid, 'OID', value)
+				this.setOid(this.parse(oid), snmp.ObjectType.OID, this.parse(value))
 			},
 		}
 
