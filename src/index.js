@@ -61,13 +61,13 @@ class Instance extends instance_skel {
 
 		// create v3 session
 		if (this.config.engineID === undefined || this.config.engineID === '') {
-			this.log('warn', 'When using SNMP v2 please specify an Engine ID.')
+			this.log('warn', 'When using SNMP v3 please specify an Engine ID.')
 			this.status(this.STATUS_UNKNOWN, 'Missing Engine ID')
 			return
 		}
 
 		if (this.config.username === undefined || this.config.username === '') {
-			this.log('warn', 'When using SNMP v2 please specify an User Name.')
+			this.log('warn', 'When using SNMP v3 please specify an User Name.')
 			this.status(this.STATUS_UNKNOWN, 'Missing User Name')
 			return
 		}
