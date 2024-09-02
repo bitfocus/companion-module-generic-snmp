@@ -13,7 +13,6 @@ class Generic_SNMP extends InstanceBase {
 		})
 
 		this.session = null
-
 	}
 
 	async init(config) {
