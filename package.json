@@ -1,32 +1,26 @@
 {
   "name": "generic-snmp",
-  "version": "1.0.2",
-  "description": "A generic SNMP module for Companion",
-  "manufacturer": "Generic",
-  "product": "SNMP Requests",
-  "keywords": [
-    "Protocol",
-    "Generic"
-  ],
-  "shortname": "snmp",
+  "version": "2.0.0",
   "main": "src/index.js",
+  "sourceType": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prettier": "prettier",
+    "format": "prettier -w .",
     "eslint": "eslint",
     "semantic-release": "semantic-release"
   },
   "dependencies": {
-    "net-snmp": "^3.5.7"
+    "@companion-module/base": "~1.10.0",
+    "net-snmp": "^3.12.1"
   },
   "devDependencies": {
-    "@semantic-release/changelog": "^6.0.1",
+    "@companion-module/tools": "^2.0.0",
+    "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "eslint": "^8.1.0",
-    "prettier": "^2.4.1",
-    "semantic-release": "^18.0.0"
+    "prettier": "^3.3.3",
+    "semantic-release": "^22.0.12"
   },
-  "author": "Johnny Estilles <johnny@estilles.com>",
   "license": "ISC",
   "repository": {
     "type": "git",
