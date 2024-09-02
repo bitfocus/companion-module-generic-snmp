@@ -61,7 +61,7 @@ class Generic_SNMP extends InstanceBase {
 		}
 
 		if (this.config.username === undefined || this.config.username === '') {
-			this.log('warn', 'When using SNMP v3 please specify an User Name.')
+			this.log('warn', 'When using SNMP v3 please specify a User Name.')
 			this.updateStatus(InstanceStatus.BadConfig, 'Missing User Name')
 			return
 		}
