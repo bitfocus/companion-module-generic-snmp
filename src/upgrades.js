@@ -28,4 +28,20 @@ export default [
 		}
 		return result
 	},
+	function v210(_context, props) {
+		const result = {
+			updatedActions: [],
+			updatedConfig: null,
+			updatedFeedbacks: [],
+		}
+		if (props.config !== null) {
+			let config = props.config
+			if (config.interval == undefined || config.interval == null) {
+				config.interval = 0
+				result.updatedConfig = config
+			}
+		}
+
+		return result
+	},
 ]

@@ -133,5 +133,16 @@ export function getConfigFields() {
 			default: '',
 			isVisible: ({ version, securityLevel }) => version === 'v3' && securityLevel === 'authPriv',
 		},
+		{
+			type: 'number',
+			id: 'interval',
+			label: 'Poll Interval',
+			width: 6,
+			min: 0,
+			max: 3600,
+			default: 0,
+			required: true,
+			tooltip: 'Set to 0 to turn polling off.',
+		},
 	]
 }

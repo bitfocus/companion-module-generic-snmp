@@ -19,11 +19,21 @@ class Generic_SNMP extends InstanceBase {
 		this.config = config
 		this.updateActions()
 		this.connectAgent()
+		if (this.config.interval > 0) {
+			this.pollOids()
+		}
 	}
 
 	async configUpdated(config) {
 		this.config = config
+		if (this.pollTimer) {
+			clearTimeout(this.pollTimer)
+			delete this.pollTimer
+		}
 		this.connectAgent()
+		if (this.config.interval > 0) {
+			this.pollOids()
+		}
 	}
 
 	connectAgent() {
@@ -117,8 +127,39 @@ class Generic_SNMP extends InstanceBase {
 		})
 	}
 
+	getOid(oid, customVariable) {
+		try {
+			this.session.get(
+				[oid],
+				((error, varbinds) => {
+					if (error) {
+						this.log('warn', `getOid error: ${JSON.stringify(error)} cannot set ${customVariable}`)
+						return
+					}
+					//this.log('debug', `OID: ${varbinds[0].oid} value: ${varbinds[0].value} setting to: ${customVariable}`)
+					this.setCustomVariableValue(customVariable, varbinds[0].value)
+				}).bind(this),
+			)
+		} catch (e) {
+			this.log('warn', `getOid error: ${JSON.stringify(e)} cannot set ${customVariable}`)
+		}
+	}
+
+	pollOids() {
+		this.subscribeActions('getOID')
+		if (this.config.interval > 0) {
+			this.pollTimer = setTimeout(() => {
+				this.pollOids()
+			}, this.config.interval * 1000)
+		}
+	}
+
 	async destroy() {
 		this.log('debug', `destroy ${this.id}`)
+		if (this.pollTimer) {
+			clearTimeout(this.pollTimer)
+			delete this.pollTimer
+		}
 		this.disconnectAgent()
 	}
 

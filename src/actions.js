@@ -183,6 +183,41 @@ export default async function (self) {
 			self.setOid(oid, snmp.ObjectType.oid, value)
 		},
 	}
+	actionDefs['getOID'] = {
+		name: 'Get OID value',
+		options: [
+			{
+				type: 'textinput',
+				label: 'OID',
+				id: 'oid',
+				default: '',
+				required: true,
+				useVariables: true,
+				regex: Regex.SOMETHING,
+			},
+			{
+				type: 'custom-variable',
+				label: 'Variable',
+				id: 'variable',
+				tooltip: 'Custom Variable that OID value is returned to',
+			},
+			{
+				type: 'checkbox',
+				label: 'Update',
+				id: 'update',
+				tooltip: 'Update each poll interval',
+				default: false,
+			},
+		],
+		callback: async ({ options }) => {
+			self.getOid(await self.parseVariablesInString(options.oid), options.variable)
+		},
+		subscribe: async ({ options }) => {
+			if (options.update) {
+				self.getOid(await self.parseVariablesInString(options.oid), options.variable)
+			}
+		},
+	}
 
 	self.setActionDefinitions(actionDefs)
 }
