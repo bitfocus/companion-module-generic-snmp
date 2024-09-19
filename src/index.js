@@ -1,5 +1,6 @@
 import { InstanceBase, runEntrypoint, InstanceStatus } from '@companion-module/base'
 import snmp from 'net-snmp'
+import PQueue from 'p-queue'
 import * as config from './configs.js'
 import UpdateActions from './actions.js'
 import UpgradeScripts from './upgrades.js'
@@ -16,6 +17,7 @@ class Generic_SNMP extends InstanceBase {
 	}
 
 	async init(config) {
+		this.snmpQueue = new PQueue({ concurrency: 1, interval: 10, intervalCap: 1 })
 		this.config = config
 		this.updateActions()
 		this.connectAgent()
@@ -25,6 +27,7 @@ class Generic_SNMP extends InstanceBase {
 	}
 
 	async configUpdated(config) {
+		this.snmpQueue.clear()
 		this.config = config
 		if (this.pollTimer) {
 			clearTimeout(this.pollTimer)
@@ -120,29 +123,33 @@ class Generic_SNMP extends InstanceBase {
 	}
 
 	setOid(oid, type, value) {
-		this.session.set([{ oid, type, value }], (error) => {
-			if (error) {
-				this.log('error', error.toString())
-			}
+		this.snmpQueue.add(() => {
+			this.session.set([{ oid, type, value }], (error) => {
+				if (error) {
+					this.log('error', error.toString())
+				}
+			})
 		})
 	}
 
 	getOid(oid, customVariable) {
-		try {
-			this.session.get(
-				[oid],
-				((error, varbinds) => {
-					if (error) {
-						this.log('warn', `getOid error: ${JSON.stringify(error)} cannot set ${customVariable}`)
-						return
-					}
-					//this.log('debug', `OID: ${varbinds[0].oid} value: ${varbinds[0].value} setting to: ${customVariable}`)
-					this.setCustomVariableValue(customVariable, varbinds[0].value)
-				}).bind(this),
-			)
-		} catch (e) {
-			this.log('warn', `getOid error: ${JSON.stringify(e)} cannot set ${customVariable}`)
-		}
+		this.snmpQueue.add(() => {
+			try {
+				this.session.get(
+					[oid],
+					((error, varbinds) => {
+						if (error) {
+							this.log('warn', `getOid error: ${JSON.stringify(error)} cannot set ${customVariable}`)
+							return
+						}
+						//this.log('debug', `OID: ${varbinds[0].oid} value: ${varbinds[0].value} setting to: ${customVariable}`)
+						this.setCustomVariableValue(customVariable, varbinds[0].value)
+					}).bind(this),
+				)
+			} catch (e) {
+				this.log('warn', `getOid error: ${JSON.stringify(e)} cannot set ${customVariable}`)
+			}
+		})
 	}
 
 	pollOids() {
@@ -156,6 +163,7 @@ class Generic_SNMP extends InstanceBase {
 
 	async destroy() {
 		this.log('debug', `destroy ${this.id}`)
+		this.snmpQueue.clear()
 		if (this.pollTimer) {
 			clearTimeout(this.pollTimer)
 			delete this.pollTimer
