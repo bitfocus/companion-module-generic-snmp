@@ -1,6 +1,6 @@
 {
   "name": "generic-snmp",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
@@ -11,14 +11,17 @@
     "package": "companion-module-build"
   },
   "dependencies": {
-    "@companion-module/base": "~1.10.0",
-    "net-snmp": "^3.15.0",
+    "@companion-module/base": "~1.11.3",
+    "net-snmp": "^3.18.2",
     "p-queue": "^8.0.1"
   },
   "devDependencies": {
-    "@companion-module/tools": "^2.0.4",
-    "eslint": "^8.1.0",
-    "prettier": "^3.3.3"
+    "@companion-module/tools": "^2.1.1",
+    "eslint": "^9.19.0",
+    "prettier": "^3.4.2"
+  },
+  "engines": {
+    "node": "^22.13"
   },
   "license": "ISC",
   "repository": {
@@ -26,5 +29,5 @@
     "url": "git+https://github.com/bitfocus/companion-module-generic-snmp.git"
   },
   "prettier": "@companion-module/tools/.prettierrc.json",
-  "packageManager": "yarn@4.4.1"
+  "packageManager": "yarn@4.6.0"
 }
