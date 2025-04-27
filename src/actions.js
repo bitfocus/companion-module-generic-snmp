@@ -13,7 +13,7 @@ export default async function (self) {
 				default: '',
 				required: true,
 				regex: Regex.SOMETHING,
-				useVariables: true,
+				useVariables: { local: true },
 			},
 			{
 				type: 'textinput',
@@ -22,12 +22,12 @@ export default async function (self) {
 				default: '',
 				required: true,
 				regex: Regex.SOMETHING,
-				useVariables: true,
+				useVariables: { local: true },
 			},
 		],
-		callback: async ({ options }) => {
-			const oid = await self.parseVariablesInString(options.oid)
-			const value = await self.parseVariablesInString(options.value)
+		callback: async ({ options }, context) => {
+			const oid = await context.parseVariablesInString(options.oid)
+			const value = await context.parseVariablesInString(options.value)
 			self.setOid(oid, snmp.ObjectType.OctetString, value)
 		},
 	}
@@ -42,7 +42,7 @@ export default async function (self) {
 				default: '',
 				required: true,
 				regex: Regex.SOMETHING,
-				useVariables: true,
+				useVariables: { local: true },
 			},
 			{
 				type: 'dropdown',
@@ -64,12 +64,12 @@ export default async function (self) {
 				label: 'Value',
 				id: 'value',
 				default: '0',
-				useVariables: true,
+				useVariables: { local: true },
 			},
 		],
-		callback: async ({ options }) => {
-			const oid = await self.parseVariablesInString(options.oid)
-			const intValue = parseInt(await self.parseVariablesInString(options.value))
+		callback: async ({ options }, context) => {
+			const oid = await context.parseVariablesInString(options.oid)
+			const intValue = parseInt(await context.parseVariablesInString(options.value))
 
 			if (Number.isNaN(intValue)) {
 				self.log('warn', `Value "${intValue}" is not an number. SNMP message not sent.`)
@@ -89,7 +89,7 @@ export default async function (self) {
 				id: 'oid',
 				default: '',
 				required: true,
-				useVariables: true,
+				useVariables: { local: true },
 				regex: Regex.SOMETHING,
 			},
 			{
@@ -97,12 +97,12 @@ export default async function (self) {
 				label: 'Value (true/false, yes/no)',
 				id: 'value',
 				default: 'true',
-				useVariables: true,
+				useVariables: { local: true },
 			},
 		],
-		callback: async ({ options }) => {
-			const oid = await self.parseVariablesInString(options.oid)
-			const parsedValue = await self.parseVariablesInString(options.value)
+		callback: async ({ options }, context) => {
+			const oid = await context.parseVariablesInString(options.oid)
+			const parsedValue = await context.parseVariablesInString(options.value)
 			let booleanValue = false
 
 			switch (parsedValue.trim().toLocaleLowerCase()) {
@@ -135,7 +135,7 @@ export default async function (self) {
 				id: 'oid',
 				default: '',
 				required: true,
-				useVariables: true,
+				useVariables: { local: true },
 				regex: Regex.SOMETHING,
 			},
 			{
@@ -144,13 +144,13 @@ export default async function (self) {
 				id: 'value',
 				default: '',
 				required: true,
-				useVariables: true,
+				useVariables: { local: true },
 				regex: Regex.SOMETHING,
 			},
 		],
-		callback: async ({ options }) => {
-			const oid = await self.parseVariablesInString(options.oid)
-			const value = await self.parseVariablesInString(options.value)
+		callback: async ({ options }, context) => {
+			const oid = await context.parseVariablesInString(options.oid)
+			const value = await context.parseVariablesInString(options.value)
 			self.setOid(oid, snmp.ObjectType.IpAddress, value)
 		},
 	}
@@ -164,7 +164,7 @@ export default async function (self) {
 				id: 'oid',
 				default: '',
 				required: true,
-				useVariables: true,
+				useVariables: { local: true },
 				regex: Regex.SOMETHING,
 			},
 			{
@@ -173,13 +173,13 @@ export default async function (self) {
 				id: 'value',
 				default: '',
 				required: true,
-				useVariables: true,
+				useVariables: { local: true },
 				regex: Regex.SOMETHING,
 			},
 		],
-		callback: async ({ options }) => {
-			const oid = await self.parseVariablesInString(options.oid)
-			const value = await self.parseVariablesInString(options.value)
+		callback: async ({ options }, context) => {
+			const oid = await context.parseVariablesInString(options.oid)
+			const value = await context.parseVariablesInString(options.value)
 			self.setOid(oid, snmp.ObjectType.oid, value)
 		},
 	}
@@ -192,7 +192,7 @@ export default async function (self) {
 				id: 'oid',
 				default: '',
 				required: true,
-				useVariables: true,
+				useVariables: { local: true },
 				regex: Regex.SOMETHING,
 			},
 			{
@@ -209,12 +209,12 @@ export default async function (self) {
 				default: false,
 			},
 		],
-		callback: async ({ options }) => {
-			self.getOid(await self.parseVariablesInString(options.oid), options.variable)
+		callback: async ({ options }, context) => {
+			self.getOid(await context.parseVariablesInString(options.oid), options.variable)
 		},
-		subscribe: async ({ options }) => {
+		subscribe: async ({ options }, context) => {
 			if (options.update) {
-				self.getOid(await self.parseVariablesInString(options.oid), options.variable)
+				self.getOid(await context.parseVariablesInString(options.oid), options.variable)
 			}
 		},
 	}
