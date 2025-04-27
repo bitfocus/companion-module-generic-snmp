@@ -4,5 +4,6 @@ node_modules/
 package-lock.json
 /pkg
 /pkg.tgz
+generic-snmp-*.tgz
 DEBUG-*
 *.zip

@@ -4,7 +4,6 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "format": "prettier -w .",
     "eslint": "eslint",
     "lint": "eslint",
@@ -12,13 +11,13 @@
   },
   "dependencies": {
     "@companion-module/base": "~1.11.3",
-    "net-snmp": "^3.19.0",
+    "net-snmp": "^3.21.2",
     "p-queue": "^8.1.0"
   },
   "devDependencies": {
-    "@companion-module/tools": "^2.1.1",
-    "eslint": "^9.21.0",
-    "prettier": "^3.5.2"
+    "@companion-module/tools": "^2.3.0",
+    "eslint": "^9.25.1",
+    "prettier": "^3.5.3"
   },
   "engines": {
     "node": "^22.13"
@@ -29,5 +28,5 @@
     "url": "git+https://github.com/bitfocus/companion-module-generic-snmp.git"
   },
   "prettier": "@companion-module/tools/.prettierrc.json",
-  "packageManager": "yarn@4.6.0"
+  "packageManager": "yarn@4.9.1"
 }
