@@ -132,7 +132,7 @@ class Generic_SNMP extends InstanceBase {
 		})
 	}
 
-	getOid(oid, customVariable) {
+	getOid(oid, customVariable, displaystring) {
 		this.snmpQueue.add(() => {
 			try {
 				this.session.get(
@@ -142,8 +142,13 @@ class Generic_SNMP extends InstanceBase {
 							this.log('warn', `getOid error: ${JSON.stringify(error)} cannot set ${customVariable}`)
 							return
 						}
-						//this.log('debug', `OID: ${varbinds[0].oid} value: ${varbinds[0].value} setting to: ${customVariable}`)
-						this.setCustomVariableValue(customVariable, varbinds[0].value)
+						//this.log('debug', `OID: ${varbinds[0].oid} type: ${varbinds[0].type} value: ${varbinds[0].value} setting to: ${customVariable}`)
+						//this.log('debug', `Repy: ${JSON.stringify(varbinds[0].value)}`)
+						if (displaystring) {
+							this.setCustomVariableValue(customVariable, varbinds[0].value.toString())
+						} else {
+							this.setCustomVariableValue(customVariable, varbinds[0].value)
+						}
 					}).bind(this),
 				)
 			} catch (e) {
