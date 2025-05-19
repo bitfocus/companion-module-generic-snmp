@@ -144,5 +144,12 @@ export function getConfigFields() {
 			required: true,
 			tooltip: 'Set to 0 to turn polling off.',
 		},
+		{
+			type: 'checkbox',
+			id: 'verbose',
+			label: 'Verbose Logs',
+			default: false,
+			width: 6,
+		}
 	]
 }

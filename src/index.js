@@ -122,18 +122,24 @@ class Generic_SNMP extends InstanceBase {
 		this.updateStatus(InstanceStatus.Disconnected)
 	}
 
-	setOid(oid, type, value) {
-		this.snmpQueue.add(() => {
+	async setOid(oid, type, value) {
+		await this.snmpQueue.add(() => {
 			this.session.set([{ oid, type, value }], (error) => {
 				if (error) {
 					this.log('error', error.toString())
+				} else {
+					if (this.config.verbose)
+						this.log(
+							'debug',
+							`Set OID: ${oid} type: ${type} value: ${value}`,
+						)
 				}
 			})
 		})
 	}
 
-	getOid(oid, customVariable, displaystring) {
-		this.snmpQueue.add(() => {
+	async getOid(oid, customVariable, displaystring) {
+		await this.snmpQueue.add(() => {
 			try {
 				this.session.get(
 					[oid],
@@ -142,13 +148,9 @@ class Generic_SNMP extends InstanceBase {
 							this.log('warn', `getOid error: ${JSON.stringify(error)} cannot set ${customVariable}`)
 							return
 						}
-						//this.log('debug', `OID: ${varbinds[0].oid} type: ${varbinds[0].type} value: ${varbinds[0].value} setting to: ${customVariable}`)
-						//this.log('debug', `Repy: ${JSON.stringify(varbinds[0].value)}`)
-						if (displaystring) {
-							this.setCustomVariableValue(customVariable, varbinds[0].value.toString())
-						} else {
-							this.setCustomVariableValue(customVariable, varbinds[0].value)
-						}
+						if (this.config.verbose) this.log('debug', `OID: ${varbinds[0].oid} type: ${varbinds[0].type} value: ${varbinds[0].value} setting to: ${customVariable}`)
+						const value = displaystring ? varbinds[0].value.toString() : varbinds[0].value
+						this.setCustomVariableValue(customVariable, value)
 					}).bind(this),
 				)
 			} catch (e) {
