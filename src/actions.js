@@ -28,7 +28,7 @@ export default async function (self) {
 		callback: async ({ options }, context) => {
 			const oid = await context.parseVariablesInString(options.oid)
 			const value = await context.parseVariablesInString(options.value)
-			self.setOid(oid, snmp.ObjectType.OctetString, value)
+			await self.setOid(oid, snmp.ObjectType.OctetString, value)
 		},
 	}
 
@@ -76,7 +76,7 @@ export default async function (self) {
 				return
 			}
 
-			self.setOid(oid, options.type, intValue)
+			await self.setOid(oid, options.type, intValue)
 		},
 	}
 
@@ -122,7 +122,7 @@ export default async function (self) {
 				}
 			}
 
-			self.setOid(oid, snmp.ObjectType.Boolean, booleanValue)
+			await self.setOid(oid, snmp.ObjectType.Boolean, booleanValue)
 		},
 	}
 
@@ -151,7 +151,7 @@ export default async function (self) {
 		callback: async ({ options }, context) => {
 			const oid = await context.parseVariablesInString(options.oid)
 			const value = await context.parseVariablesInString(options.value)
-			self.setOid(oid, snmp.ObjectType.IpAddress, value)
+			await self.setOid(oid, snmp.ObjectType.IpAddress, value)
 		},
 	}
 
@@ -180,7 +180,7 @@ export default async function (self) {
 		callback: async ({ options }, context) => {
 			const oid = await context.parseVariablesInString(options.oid)
 			const value = await context.parseVariablesInString(options.value)
-			self.setOid(oid, snmp.ObjectType.oid, value)
+			await self.setOid(oid, snmp.ObjectType.oid, value)
 		},
 	}
 	actionDefs['getOID'] = {
@@ -217,11 +217,11 @@ export default async function (self) {
 			},
 		],
 		callback: async ({ options }, context) => {
-			self.getOid(await context.parseVariablesInString(options.oid), options.variable, options.displaystring)
+			await self.getOid(await context.parseVariablesInString(options.oid), options.variable, options.displaystring)
 		},
 		subscribe: async ({ options }, context) => {
 			if (options.update) {
-				self.getOid(await context.parseVariablesInString(options.oid), options.variable, options.displaystring)
+				await self.getOid(await context.parseVariablesInString(options.oid), options.variable, options.displaystring)
 			}
 		},
 	}

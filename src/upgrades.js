@@ -44,4 +44,26 @@ export default [
 
 		return result
 	},
+	function v220(_context, props) {
+		const result = {
+			updatedActions: [],
+			updatedConfig: null,
+			updatedFeedbacks: [],
+		}
+		for (const action of props.actions) {
+			if (action.actionId === 'getOID') {
+				action.displaystring ??= false
+				result.updatedActions.push(action)
+			}
+		}
+		if (props.config !== null) {
+			let config = props.config
+			if (config.verbose == undefined || config.verbose == null) {
+				config.verbose = false
+				result.updatedConfig = config
+			}
+		}
+
+		return result
+	},
 ]
