@@ -128,11 +128,7 @@ class Generic_SNMP extends InstanceBase {
 				if (error) {
 					this.log('error', error.toString())
 				} else {
-					if (this.config.verbose)
-						this.log(
-							'debug',
-							`Set OID: ${oid} type: ${type} value: ${value}`,
-						)
+					if (this.config.verbose) this.log('debug', `Set OID: ${oid} type: ${type} value: ${value}`)
 				}
 			})
 		})
@@ -148,7 +144,11 @@ class Generic_SNMP extends InstanceBase {
 							this.log('warn', `getOid error: ${JSON.stringify(error)} cannot set ${customVariable}`)
 							return
 						}
-						if (this.config.verbose) this.log('debug', `OID: ${varbinds[0].oid} type: ${varbinds[0].type} value: ${varbinds[0].value} setting to: ${customVariable}`)
+						if (this.config.verbose)
+							this.log(
+								'debug',
+								`OID: ${varbinds[0].oid} type: ${varbinds[0].type} value: ${varbinds[0].value} setting to: ${customVariable}`,
+							)
 						const value = displaystring ? varbinds[0].value.toString() : varbinds[0].value
 						this.setCustomVariableValue(customVariable, value)
 					}).bind(this),

@@ -150,6 +150,6 @@ export function getConfigFields() {
 			label: 'Verbose Logs',
 			default: false,
 			width: 6,
-		}
+		},
 	]
 }
