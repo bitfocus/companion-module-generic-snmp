@@ -208,13 +208,20 @@ export default async function (self) {
 				tooltip: 'Update each poll interval',
 				default: false,
 			},
+			{
+				type: 'checkbox',
+				label: 'DisplayString',
+				id: 'displaystring',
+				tooltip: 'Convert OctetString (array of numbers) to DisplayString (text)',
+				default: false,
+			},
 		],
 		callback: async ({ options }, context) => {
-			self.getOid(await context.parseVariablesInString(options.oid), options.variable)
+			self.getOid(await context.parseVariablesInString(options.oid), options.variable, options.displaystring)
 		},
 		subscribe: async ({ options }, context) => {
 			if (options.update) {
-				self.getOid(await context.parseVariablesInString(options.oid), options.variable)
+				self.getOid(await context.parseVariablesInString(options.oid), options.variable, options.displaystring)
 			}
 		},
 	}
