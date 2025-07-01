@@ -117,7 +117,6 @@ export function getConfigFields() {
 			label: 'Priv Protocol',
 			width: 6,
 			choices: [
-				{ id: 'des', label: 'DES encryption (CBC-DES)' },
 				{ id: 'aes', label: '128-bit AES encryption (CFB-AES-128)' },
 				{ id: 'aes256b', label: '256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localiztaion' },
 				{ id: 'aes256r', label: '256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion' },

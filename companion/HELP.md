@@ -32,7 +32,6 @@ If you selected SNMP version `v3` you will also need to configure the following:
 5. Auth Key - The message authentication key. (Available if Security Lavel is `authNoPriv` or `authPriv`)
 6. Priv Protocol - The encryption algorith. (Available if Security Lavel is `authPriv`)
    - `No Priv` - use if your agent's security level is `AuthNoPriv`
-   - `DES` - for DES encryption (CBC-DES)
    - `AES` - for 128-bit AES encryption (CFB-AES-128)'
    - `AES256B` - for 256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localiztaion
    - `AES256R` - 256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion
