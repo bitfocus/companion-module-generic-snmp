@@ -7,9 +7,9 @@ export function getConfigFields() {
 			id: 'info',
 			width: 12,
 			label: 'Information',
-			value: `<strong>PLEASE READ THIS!</strong> Generic modules are only for use with custom applications.
+			value: `PLEASE READ THIS! Generic modules are only for use with custom applications.
 					If you use this module to control a device or software on the market that more than you are using,
-					<strong>PLEASE let us know</strong> about this software, so we can make a proper module for it.
+					PLEASE let us know about this software, so we can make a proper module for it.
 					If we already support this and you use this to trigger a feature our module doesn't support, 
 					please let us know. We want Companion to be as easy as possible to use for anyone.`,
 		},
@@ -117,12 +117,11 @@ export function getConfigFields() {
 			label: 'Priv Protocol',
 			width: 6,
 			choices: [
-				{ id: 'des', label: 'DES encryption (CBC-DES)' },
 				{ id: 'aes', label: '128-bit AES encryption (CFB-AES-128)' },
 				{ id: 'aes256b', label: '256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localiztaion' },
 				{ id: 'aes256r', label: '256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion' },
 			],
-			default: 'des',
+			default: 'aes',
 			isVisible: ({ version, securityLevel }) => version === 'v3' && securityLevel === 'authPriv',
 		},
 		{

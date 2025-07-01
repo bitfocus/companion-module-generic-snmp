@@ -217,11 +217,21 @@ export default async function (self) {
 			},
 		],
 		callback: async ({ options }, context) => {
-			await self.getOid(await context.parseVariablesInString(options.oid), options.variable, options.displaystring)
+			await self.getOid(
+				await context.parseVariablesInString(options.oid),
+				options.variable,
+				options.displaystring,
+				context,
+			)
 		},
 		subscribe: async ({ options }, context) => {
 			if (options.update) {
-				await self.getOid(await context.parseVariablesInString(options.oid), options.variable, options.displaystring)
+				await self.getOid(
+					await context.parseVariablesInString(options.oid),
+					options.variable,
+					options.displaystring,
+					context,
+				)
 			}
 		},
 	}

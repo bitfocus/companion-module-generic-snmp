@@ -18,6 +18,7 @@ class Generic_SNMP extends InstanceBase {
 
 	async init(config) {
 		this.snmpQueue = new PQueue({ concurrency: 1, interval: 10, intervalCap: 1 })
+		process.titie = this.label.replaceAll(/[^a-zA-Z0-9-_.]/gm, '')
 		this.config = config
 		this.updateActions()
 		this.connectAgent()
@@ -28,6 +29,7 @@ class Generic_SNMP extends InstanceBase {
 
 	async configUpdated(config) {
 		this.snmpQueue.clear()
+		process.titie = this.label.replaceAll(/[^a-zA-Z0-9-_.]/gm, '')
 		this.config = config
 		if (this.pollTimer) {
 			clearTimeout(this.pollTimer)
@@ -134,7 +136,7 @@ class Generic_SNMP extends InstanceBase {
 		})
 	}
 
-	async getOid(oid, customVariable, displaystring) {
+	async getOid(oid, customVariable, displaystring, context) {
 		await this.snmpQueue.add(() => {
 			try {
 				this.session.get(
@@ -150,7 +152,7 @@ class Generic_SNMP extends InstanceBase {
 								`OID: ${varbinds[0].oid} type: ${varbinds[0].type} value: ${varbinds[0].value} setting to: ${customVariable}`,
 							)
 						const value = displaystring ? varbinds[0].value.toString() : varbinds[0].value
-						this.setCustomVariableValue(customVariable, value)
+						context.setCustomVariableValue(customVariable, value)
 					}).bind(this),
 				)
 			} catch (e) {
