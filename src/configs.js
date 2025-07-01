@@ -121,7 +121,7 @@ export function getConfigFields() {
 				{ id: 'aes256b', label: '256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localiztaion' },
 				{ id: 'aes256r', label: '256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion' },
 			],
-			default: 'des',
+			default: 'aes',
 			isVisible: ({ version, securityLevel }) => version === 'v3' && securityLevel === 'authPriv',
 		},
 		{
