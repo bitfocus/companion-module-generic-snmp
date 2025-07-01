@@ -136,7 +136,7 @@ class Generic_SNMP extends InstanceBase {
 		})
 	}
 
-	async getOid(oid, customVariable, displaystring) {
+	async getOid(oid, customVariable, displaystring, context) {
 		await this.snmpQueue.add(() => {
 			try {
 				this.session.get(
@@ -152,7 +152,7 @@ class Generic_SNMP extends InstanceBase {
 								`OID: ${varbinds[0].oid} type: ${varbinds[0].type} value: ${varbinds[0].value} setting to: ${customVariable}`,
 							)
 						const value = displaystring ? varbinds[0].value.toString() : varbinds[0].value
-						this.setCustomVariableValue(customVariable, value)
+						context.setCustomVariableValue(customVariable, value)
 					}).bind(this),
 				)
 			} catch (e) {
