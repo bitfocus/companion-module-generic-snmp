@@ -18,6 +18,7 @@ class Generic_SNMP extends InstanceBase {
 
 	async init(config) {
 		this.snmpQueue = new PQueue({ concurrency: 1, interval: 10, intervalCap: 1 })
+		process.titie = this.label.replaceAll(/[^a-zA-Z0-9-_.]/gm, '')
 		this.config = config
 		this.updateActions()
 		this.connectAgent()
@@ -28,6 +29,7 @@ class Generic_SNMP extends InstanceBase {
 
 	async configUpdated(config) {
 		this.snmpQueue.clear()
+		process.titie = this.label.replaceAll(/[^a-zA-Z0-9-_.]/gm, '')
 		this.config = config
 		if (this.pollTimer) {
 			clearTimeout(this.pollTimer)
