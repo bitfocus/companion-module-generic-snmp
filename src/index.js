@@ -125,6 +125,10 @@ class Generic_SNMP extends InstanceBase {
 	}
 
 	async setOid(oid, type, value) {
+		while (oid.startsWith('.')) {
+			oid = oid.substring(1)
+		}
+		if (oid.length == 0) return
 		await this.snmpQueue.add(() => {
 			this.session.set([{ oid, type, value }], (error) => {
 				if (error) {
@@ -137,6 +141,14 @@ class Generic_SNMP extends InstanceBase {
 	}
 
 	async getOid(oid, customVariable, displaystring, context) {
+		const bufferToBigInt = (buffer, start = 0, end = buffer.length) => {
+			const bufferAsHexString = buffer.slice(start, end).toString('hex')
+			return BigInt(`0x${bufferAsHexString}`)
+		}
+		while (oid.startsWith('.')) {
+			oid = oid.substring(1)
+		}
+		if (oid.length == 0) return
 		await this.snmpQueue.add(() => {
 			try {
 				this.session.get(
@@ -151,7 +163,10 @@ class Generic_SNMP extends InstanceBase {
 								'debug',
 								`OID: ${varbinds[0].oid} type: ${varbinds[0].type} value: ${varbinds[0].value} setting to: ${customVariable}`,
 							)
-						const value = displaystring ? varbinds[0].value.toString() : varbinds[0].value
+						let value = displaystring ? varbinds[0].value.toString() : varbinds[0].value
+						if (varbinds[0].type == snmp.ObjectType[70]) {
+							value = bufferToBigInt(varbinds[0].value).toString()
+						}
 						context.setCustomVariableValue(customVariable, value)
 					}).bind(this),
 				)
