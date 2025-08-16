@@ -164,7 +164,7 @@ class Generic_SNMP extends InstanceBase {
 								`OID: ${varbinds[0].oid} type: ${varbinds[0].type} value: ${varbinds[0].value} setting to: ${customVariable}`,
 							)
 						let value = displaystring ? varbinds[0].value.toString() : varbinds[0].value
-						if (varbinds[0].type == snmp.ObjectType[70]) {
+						if (varbinds[0].type == snmp.ObjectType.Counter64) {
 							value = bufferToBigInt(varbinds[0].value).toString()
 						}
 						context.setCustomVariableValue(customVariable, value)
