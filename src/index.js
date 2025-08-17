@@ -5,6 +5,13 @@ import * as config from './configs.js'
 import UpdateActions from './actions.js'
 import UpgradeScripts from './upgrades.js'
 
+const trimOid = (oid) => {
+	while (oid.startsWith('.')) {
+		oid = oid.substring(1)
+	}
+	return oid.trim()
+}
+
 class Generic_SNMP extends InstanceBase {
 	constructor(internal) {
 		super(internal)
@@ -125,6 +132,8 @@ class Generic_SNMP extends InstanceBase {
 	}
 
 	async setOid(oid, type, value) {
+		oid = trimOid(oid)
+		if (oid.length == 0) return
 		await this.snmpQueue.add(() => {
 			this.session.set([{ oid, type, value }], (error) => {
 				if (error) {
@@ -137,6 +146,12 @@ class Generic_SNMP extends InstanceBase {
 	}
 
 	async getOid(oid, customVariable, displaystring, context) {
+		const bufferToBigInt = (buffer, start = 0, end = buffer.length) => {
+			const bufferAsHexString = buffer.slice(start, end).toString('hex')
+			return BigInt(`0x${bufferAsHexString}`)
+		}
+		oid = trimOid(oid)
+		if (oid.length == 0) return
 		await this.snmpQueue.add(() => {
 			try {
 				this.session.get(
@@ -146,12 +161,15 @@ class Generic_SNMP extends InstanceBase {
 							this.log('warn', `getOid error: ${JSON.stringify(error)} cannot set ${customVariable}`)
 							return
 						}
+						let value
+						if (varbinds[0].type == snmp.ObjectType.Counter64) {
+							value = bufferToBigInt(varbinds[0].value).toString()
+						} else value = displaystring ? varbinds[0].value.toString() : varbinds[0].value
 						if (this.config.verbose)
 							this.log(
 								'debug',
-								`OID: ${varbinds[0].oid} type: ${varbinds[0].type} value: ${varbinds[0].value} setting to: ${customVariable}`,
+								`OID: ${varbinds[0].oid} type: ${snmp.ObjectType[varbinds[0].type]} value: ${value} setting to: ${customVariable}`,
 							)
-						const value = displaystring ? varbinds[0].value.toString() : varbinds[0].value
 						context.setCustomVariableValue(customVariable, value)
 					}).bind(this),
 				)

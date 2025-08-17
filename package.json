@@ -1,6 +1,6 @@
 {
   "name": "generic-snmp",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "@companion-module/tools": "^2.3.0",
-    "eslint": "^9.30.0",
+    "eslint": "^9.33.0",
     "prettier": "^3.6.2"
   },
   "engines": {
