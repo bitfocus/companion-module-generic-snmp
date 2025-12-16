@@ -103,8 +103,8 @@ export function getConfigFields() {
 				version === 'v3' && (securityLevel === 'authNoPriv' || securityLevel === 'authPriv'),
 		},
 		{
-			type: 'textinput',
-			id: 'secret-text',
+			type: 'secret-text',
+			id: 'authKey',
 			label: 'Auth Key',
 			width: 6,
 			default: '',
