@@ -2,7 +2,7 @@ import { Regex } from '@companion-module/base'
 import snmp from 'net-snmp'
 
 export default async function (self) {
-	let actionDefs = []
+	const actionDefs = {}
 	actionDefs['setString'] = {
 		name: 'Set OID value to an OctetString',
 		options: [
@@ -26,8 +26,8 @@ export default async function (self) {
 			},
 		],
 		callback: async ({ options }, context) => {
-			const oid = await context.parseVariablesInString(options.oid)
-			const value = await context.parseVariablesInString(options.value)
+			const oid = options.oid
+			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.OctetString, value)
 		},
 	}
@@ -68,8 +68,8 @@ export default async function (self) {
 			},
 		],
 		callback: async ({ options }, context) => {
-			const oid = await context.parseVariablesInString(options.oid)
-			const intValue = parseInt(await context.parseVariablesInString(options.value))
+			const oid = options.oid
+			const intValue = parseInt(options.value)
 
 			if (Number.isNaN(intValue)) {
 				self.log('warn', `Value "${intValue}" is not an number. SNMP message not sent.`)
@@ -101,8 +101,8 @@ export default async function (self) {
 			},
 		],
 		callback: async ({ options }, context) => {
-			const oid = await context.parseVariablesInString(options.oid)
-			const parsedValue = await context.parseVariablesInString(options.value)
+			const oid = options.oid
+			const parsedValue = options.value
 			let booleanValue = false
 
 			switch (parsedValue.trim().toLocaleLowerCase()) {
@@ -149,8 +149,8 @@ export default async function (self) {
 			},
 		],
 		callback: async ({ options }, context) => {
-			const oid = await context.parseVariablesInString(options.oid)
-			const value = await context.parseVariablesInString(options.value)
+			const oid = options.oid
+			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.IpAddress, value)
 		},
 	}
@@ -178,8 +178,8 @@ export default async function (self) {
 			},
 		],
 		callback: async ({ options }, context) => {
-			const oid = await context.parseVariablesInString(options.oid)
-			const value = await context.parseVariablesInString(options.value)
+			const oid = options.oid
+			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.oid, value)
 		},
 	}
@@ -217,22 +217,16 @@ export default async function (self) {
 			},
 		],
 		callback: async ({ options }, context) => {
-			await self.getOid(
-				await context.parseVariablesInString(options.oid),
-				options.variable,
-				options.displaystring,
-				context,
-			)
+			await self.getOid(options.oid, options.variable, options.displaystring, context)
 		},
 		subscribe: async ({ options }, context) => {
 			if (options.update) {
-				await self.getOid(
-					await context.parseVariablesInString(options.oid),
-					options.variable,
-					options.displaystring,
-					context,
-				)
+				await self.getOid(options.oid, options.variable, options.displaystring, context)
 			}
+		},
+		learn: async ({ options }, context) => {
+			await self.getOid(options.oid, options.variable, options.displaystring, context)
+			return undefined
 		},
 	}
 
