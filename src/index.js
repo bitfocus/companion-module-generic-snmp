@@ -26,7 +26,7 @@ class Generic_SNMP extends InstanceBase {
 		this.session = null
 	}
 
-	async init(config, secrets) {
+	async init(config, _isFirstInit, secrets) {
 		this.snmpQueue = new PQueue({ concurrency: 1, interval: 10, intervalCap: 1 })
 		process.titie = this.label.replaceAll(/[^a-zA-Z0-9-_.]/gm, '')
 		this.config = config
