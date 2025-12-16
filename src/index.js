@@ -5,6 +5,7 @@ import * as config from './configs.js'
 import UpdateActions from './actions.js'
 import UpdateFeedbacks from './feedbacks.js'
 import UpgradeScripts from './upgrades.js'
+import { throttle } from 'es-toolkit'
 
 const trimOid = (oid) => {
 	while (oid.startsWith('.')) {
@@ -21,6 +22,7 @@ class Generic_SNMP extends InstanceBase {
 			...config,
 		})
 		this.oidValues = new Map()
+		this.feedbackIdsToCheck = new Set()
 		this.session = null
 	}
 
@@ -175,7 +177,10 @@ class Generic_SNMP extends InstanceBase {
 							)
 						this.oidValues.set(varbinds[0].oid, value)
 						if (customVariable) context.setCustomVariableValue(customVariable, value)
-						if (feedbackId) this.checkFeedbacksById(feedbackId)
+						if (feedbackId) {
+							this.feedbackIdsToCheck.add(feedbackId)
+							this.throttledFeedbackIdCheck()
+						}
 					}).bind(this),
 				)
 			} catch (e) {
@@ -194,9 +199,19 @@ class Generic_SNMP extends InstanceBase {
 		}
 	}
 
+	throttledFeedbackIdCheck = throttle(
+		() => {
+			this.checkFeedbacksById(...this.feedbackIdsToCheck)
+			this.feedbackIdsToCheck.clear()
+		},
+		30,
+		{ leading: false, trailing: true },
+	)
+
 	async destroy() {
 		this.log('debug', `destroy ${this.id}:${this.label}`)
 		this.snmpQueue.clear()
+		this.throttledFeedbackIdCheck.cancel()
 		if (this.pollTimer) {
 			clearTimeout(this.pollTimer)
 			delete this.pollTimer
