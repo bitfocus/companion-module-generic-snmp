@@ -42,8 +42,8 @@ If you selected SNMP version `v3` you will also need to configure the following:
 You can perform the following actions with this module:
 
 - Get OID value, return to custom variable
-   - Optional update based on connection poll
-   - Optional convert returned OctetString to DisplayString
+  - Optional update based on connection poll
+  - Optional convert returned OctetString to DisplayString
 - Set OID value to an OctetString
 - Set OID value to a Number. This includes the following SNMP Object Types:
   - Integer
@@ -53,3 +53,9 @@ You can perform the following actions with this module:
 - Set OID value to a Boolean
 - Set OID value to an IP Address
 - Set OID value to an OID
+
+## Feedbacks
+
+- Get OID value
+  - Always updates based on connection poll
+  - Optional convert returned OctetString to DisplayString
