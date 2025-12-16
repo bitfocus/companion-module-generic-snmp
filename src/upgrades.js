@@ -66,4 +66,31 @@ export default [
 
 		return result
 	},
+
+	function v230(_context, props) {
+		const result = {
+			updatedActions: [],
+			updatedConfig: null,
+			updatedSecrets: null,
+			updatedFeedbacks: [],
+		}
+		const config = props.config
+
+		if (config.authKey) {
+			result.updatedSecrets = {
+				...result.updatedSecrets,
+				authKey: config.authKey,
+			}
+			delete config.authKey
+		}
+		if (config.privKey) {
+			result.updatedSecrets = {
+				...result.updatedSecrets,
+				privKey: config.privKey,
+			}
+			delete config.privKey
+		}
+		result.updatedConfig = config
+		return result
+	},
 ]

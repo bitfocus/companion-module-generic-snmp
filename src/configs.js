@@ -104,7 +104,7 @@ export function getConfigFields() {
 		},
 		{
 			type: 'textinput',
-			id: 'authKey',
+			id: 'secret-text',
 			label: 'Auth Key',
 			width: 6,
 			default: '',
@@ -125,7 +125,7 @@ export function getConfigFields() {
 			isVisible: ({ version, securityLevel }) => version === 'v3' && securityLevel === 'authPriv',
 		},
 		{
-			type: 'textinput',
+			type: 'secret-text',
 			id: 'privKey',
 			label: 'Priv Key',
 			width: 6,
