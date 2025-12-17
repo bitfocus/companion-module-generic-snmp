@@ -14,6 +14,8 @@ const trimOid = (oid) => {
 	return oid.trim()
 }
 
+const isValidSnmpOid = (value) => /^(0|1|2)(\.(0|[1-9]\d*))+$/u.test(value)
+
 class Generic_SNMP extends InstanceBase {
 	constructor(internal) {
 		super(internal)
@@ -139,6 +141,10 @@ class Generic_SNMP extends InstanceBase {
 
 	async setOid(oid, type, value) {
 		oid = trimOid(oid)
+		if (!isValidSnmpOid(oid)) {
+			this.log('warn', `Invalid OID: ${oid}`)
+			return
+		}
 		if (oid.length == 0) return
 		await this.snmpQueue.add(() => {
 			this.session.set([{ oid, type, value }], (error) => {
@@ -157,6 +163,10 @@ class Generic_SNMP extends InstanceBase {
 			return BigInt(`0x${bufferAsHexString}`)
 		}
 		oid = trimOid(oid)
+		if (!isValidSnmpOid(oid)) {
+			this.log('warn', `Invalid OID: ${oid}`)
+			return
+		}
 		if (oid.length == 0) return
 		await this.snmpQueue.add(() => {
 			try {
