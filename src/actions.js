@@ -67,6 +67,16 @@ export default async function (self) {
 
 			await self.setOid(oid, options.type, intValue)
 		},
+		learn: async ({ options }, context) => {
+			await self.getOid(options.oid, '', options.displaystring, context)
+			if (self.oidValues.has(options.oid)) {
+				return {
+					...options,
+					value: self.oidValues.get(options.oid).toString(),
+				}
+			}
+			return undefined
+		},
 	}
 
 	actionDefs['setBoolean'] = {
@@ -75,7 +85,7 @@ export default async function (self) {
 			OidOption,
 			{
 				type: 'textinput',
-				label: 'Value (true/false, yes/no)',
+				label: 'Value (true/false, yes/no, on/off, 1/0)',
 				id: 'value',
 				default: 'true',
 				useVariables: { local: true },
@@ -88,11 +98,15 @@ export default async function (self) {
 
 			switch (parsedValue.trim().toLocaleLowerCase()) {
 				case 'true':
+				case 'on':
+				case '1':
 				case 'yes': {
 					booleanValue = true
 					break
 				}
 				case 'false':
+				case 'off':
+				case '0':
 				case 'no': {
 					booleanValue = false
 					break
@@ -105,6 +119,16 @@ export default async function (self) {
 
 			await self.setOid(oid, snmp.ObjectType.Boolean, booleanValue)
 		},
+		learn: async ({ options }, context) => {
+			await self.getOid(options.oid, '', options.displaystring, context)
+			if (self.oidValues.has(options.oid)) {
+				return {
+					...options,
+					value: self.oidValues.get(options.oid).toString(),
+				}
+			}
+			return undefined
+		},
 	}
 
 	actionDefs['setIpAddress'] = {
@@ -115,6 +139,16 @@ export default async function (self) {
 			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.IpAddress, value)
 		},
+		learn: async ({ options }, context) => {
+			await self.getOid(options.oid, '', options.displaystring, context)
+			if (self.oidValues.has(options.oid)) {
+				return {
+					...options,
+					value: self.oidValues.get(options.oid).toString(),
+				}
+			}
+			return undefined
+		},
 	}
 
 	actionDefs['setOID'] = {
@@ -124,6 +158,16 @@ export default async function (self) {
 			const oid = options.oid
 			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.oid, value)
+		},
+		learn: async ({ options }, context) => {
+			await self.getOid(options.oid, '', options.displaystring, context)
+			if (self.oidValues.has(options.oid)) {
+				return {
+					...options,
+					value: self.oidValues.get(options.oid).toString(),
+				}
+			}
+			return undefined
 		},
 	}
 	actionDefs['getOID'] = {
