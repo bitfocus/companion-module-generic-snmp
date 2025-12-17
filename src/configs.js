@@ -139,7 +139,7 @@ export function getConfigFields() {
 			max: 3600,
 			default: 0,
 			required: true,
-			tooltip: 'Set to 0 to turn polling off.',
+			description: 'Seconds. Set to 0 to turn polling off.',
 		},
 		{
 			type: 'checkbox',
