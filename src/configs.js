@@ -51,14 +51,14 @@ export function getConfigFields() {
 			width: 6,
 			label: 'Community',
 			default: 'companion',
-			isVisible: ({ version }) => version === 'v1' || version === 'v2c',
+			isVisibleExpression: ` $(options:version) === 'v1' || $(options:version) === 'v2c'`,
 		},
 		{
 			type: 'static-text',
 			id: 'infov3',
 			width: 12,
 			value: '<h5>SNMP v3 Configuration</h5>',
-			isVisible: ({ version }) => version === 'v3',
+			isVisibleExpression: ` $(options:version) === 'v3'`,
 		},
 		{
 			type: 'textinput',
@@ -66,7 +66,7 @@ export function getConfigFields() {
 			width: 6,
 			label: 'Engine ID',
 			default: '',
-			isVisible: ({ version }) => version === 'v3',
+			isVisibleExpression: ` $(options:version) === 'v3'`,
 		},
 		{
 			type: 'textinput',
@@ -74,7 +74,7 @@ export function getConfigFields() {
 			width: 6,
 			label: 'User Name',
 			default: 'companion',
-			isVisible: ({ version }) => version === 'v3',
+			isVisibleExpression: ` $(options:version) === 'v3'`,
 		},
 		{
 			type: 'dropdown',
@@ -87,7 +87,7 @@ export function getConfigFields() {
 				{ id: 'authPriv', label: 'authPriv - Message authentication and encryption' },
 			],
 			default: 'noAuthNoPriv',
-			isVisible: ({ version }) => version === 'v3',
+			isVisibleExpression: ` $(options:version) === 'v3'`,
 		},
 		{
 			type: 'dropdown',
@@ -99,8 +99,7 @@ export function getConfigFields() {
 				{ id: 'sha', label: 'SHA message authentication (HMAC-SHA-96)' },
 			],
 			default: 'md5',
-			isVisible: ({ version, securityLevel }) =>
-				version === 'v3' && (securityLevel === 'authNoPriv' || securityLevel === 'authPriv'),
+			isVisibleExpression: ` $(options:version) === 'v3' && ( $(options:securityLevel) === 'authNoPriv' || $(options:securityLevel) === 'authPriv' )`,
 		},
 		{
 			type: 'secret-text',
@@ -108,8 +107,7 @@ export function getConfigFields() {
 			label: 'Auth Key',
 			width: 6,
 			default: '',
-			isVisible: ({ version, securityLevel }) =>
-				version === 'v3' && (securityLevel === 'authNoPriv' || securityLevel === 'authPriv'),
+			isVisibleExpression: ` $(options:version) === 'v3' && ( $(options:securityLevel) === 'authNoPriv' || $(options:securityLevel) === 'authPriv' )`,
 		},
 		{
 			type: 'dropdown',
@@ -122,7 +120,7 @@ export function getConfigFields() {
 				{ id: 'aes256r', label: '256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion' },
 			],
 			default: 'aes',
-			isVisible: ({ version, securityLevel }) => version === 'v3' && securityLevel === 'authPriv',
+			isVisibleExpression: ` $(options:version) === 'v3' && $(options:securityLevel) === 'authPriv' `,
 		},
 		{
 			type: 'secret-text',
@@ -130,7 +128,7 @@ export function getConfigFields() {
 			label: 'Priv Key',
 			width: 6,
 			default: '',
-			isVisible: ({ version, securityLevel }) => version === 'v3' && securityLevel === 'authPriv',
+			isVisibleExpression: ` $(options:version) === 'v3' && $(options:securityLevel) === 'authPriv' `,
 		},
 		{
 			type: 'number',
