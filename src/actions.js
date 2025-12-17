@@ -1,20 +1,22 @@
 import { Regex } from '@companion-module/base'
 import snmp from 'net-snmp'
 
+export const OidOption = {
+	type: 'textinput',
+	label: 'OID',
+	id: 'oid',
+	default: '',
+	required: true,
+	regex: Regex.SOMETHING,
+	useVariables: { local: true },
+}
+
 export default async function (self) {
 	const actionDefs = {}
 	actionDefs['setString'] = {
 		name: 'Set OID value to an OctetString',
 		options: [
-			{
-				type: 'textinput',
-				label: 'OID',
-				id: 'oid',
-				default: '',
-				required: true,
-				regex: Regex.SOMETHING,
-				useVariables: { local: true },
-			},
+			OidOption,
 			{
 				type: 'textinput',
 				label: 'Value',
@@ -35,15 +37,7 @@ export default async function (self) {
 	actionDefs['setNumber'] = {
 		name: 'Set OID value to a Number',
 		options: [
-			{
-				type: 'textinput',
-				label: 'OID',
-				id: 'oid',
-				default: '',
-				required: true,
-				regex: Regex.SOMETHING,
-				useVariables: { local: true },
-			},
+			OidOption,
 			{
 				type: 'dropdown',
 				label: 'Type',
@@ -83,15 +77,7 @@ export default async function (self) {
 	actionDefs['setBoolean'] = {
 		name: 'Set OID value to a Boolean',
 		options: [
-			{
-				type: 'textinput',
-				label: 'OID',
-				id: 'oid',
-				default: '',
-				required: true,
-				useVariables: { local: true },
-				regex: Regex.SOMETHING,
-			},
+			OidOption,
 			{
 				type: 'textinput',
 				label: 'Value (true/false, yes/no)',
@@ -129,15 +115,7 @@ export default async function (self) {
 	actionDefs['setIpAddress'] = {
 		name: 'Set OID value to an IP Address',
 		options: [
-			{
-				type: 'textinput',
-				label: 'OID',
-				id: 'oid',
-				default: '',
-				required: true,
-				useVariables: { local: true },
-				regex: Regex.SOMETHING,
-			},
+			OidOption,
 			{
 				type: 'textinput',
 				label: 'Value',
@@ -158,15 +136,7 @@ export default async function (self) {
 	actionDefs['setOID'] = {
 		name: 'Set OID value to an OID',
 		options: [
-			{
-				type: 'textinput',
-				label: 'OID',
-				id: 'oid',
-				default: '',
-				required: true,
-				useVariables: { local: true },
-				regex: Regex.SOMETHING,
-			},
+			OidOption,
 			{
 				type: 'textinput',
 				label: 'Value',
@@ -186,15 +156,7 @@ export default async function (self) {
 	actionDefs['getOID'] = {
 		name: 'Get OID value',
 		options: [
-			{
-				type: 'textinput',
-				label: 'OID',
-				id: 'oid',
-				default: '',
-				required: true,
-				useVariables: { local: true },
-				regex: Regex.SOMETHING,
-			},
+			OidOption,
 			{
 				type: 'custom-variable',
 				label: 'Variable',

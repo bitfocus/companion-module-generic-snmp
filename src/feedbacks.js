@@ -1,4 +1,4 @@
-import { Regex } from '@companion-module/base'
+import { OidOption } from './actions.js'
 
 export default async function (self) {
 	const feedbackDefs = {}
@@ -6,15 +6,7 @@ export default async function (self) {
 		name: 'OID value',
 		type: 'value',
 		options: [
-			{
-				type: 'textinput',
-				label: 'OID',
-				id: 'oid',
-				default: '',
-				required: true,
-				useVariables: { local: true },
-				regex: Regex.SOMETHING,
-			},
+			OidOption,
 			{
 				type: 'checkbox',
 				label: 'DisplayString',
@@ -25,7 +17,7 @@ export default async function (self) {
 		],
 		callback: async (feedback, _context) => {
 			if (!self.oidValues.has(feedback.options.oid)) {
-				self.getOid(feedback.options.oid, '', feedback.options.displaystring, null, feedback.id).catch(() => {})
+				await self.getOid(feedback.options.oid, '', feedback.options.displaystring, null, feedback.id)
 			}
 			return self.oidValues.get(feedback.id) ?? null
 		},
