@@ -32,6 +32,7 @@ class Generic_SNMP extends InstanceBase {
 		this.config = config
 		this.secrets = secrets
 		this.updateActions()
+		this.updateFeedbacks()
 		this.connectAgent()
 		if (this.config.interval > 0) {
 			this.pollOids()
