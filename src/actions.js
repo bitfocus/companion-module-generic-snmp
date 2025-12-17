@@ -25,7 +25,7 @@ export default async function (self) {
 				useVariables: { local: true },
 			},
 		],
-		callback: async ({ options }, context) => {
+		callback: async ({ options }, _context) => {
 			const oid = options.oid
 			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.OctetString, value)
@@ -67,7 +67,7 @@ export default async function (self) {
 				useVariables: { local: true },
 			},
 		],
-		callback: async ({ options }, context) => {
+		callback: async ({ options }, _context) => {
 			const oid = options.oid
 			const intValue = parseInt(options.value)
 
@@ -100,7 +100,7 @@ export default async function (self) {
 				useVariables: { local: true },
 			},
 		],
-		callback: async ({ options }, context) => {
+		callback: async ({ options }, _context) => {
 			const oid = options.oid
 			const parsedValue = options.value
 			let booleanValue = false
@@ -148,7 +148,7 @@ export default async function (self) {
 				regex: Regex.SOMETHING,
 			},
 		],
-		callback: async ({ options }, context) => {
+		callback: async ({ options }, _context) => {
 			const oid = options.oid
 			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.IpAddress, value)
@@ -177,7 +177,7 @@ export default async function (self) {
 				regex: Regex.SOMETHING,
 			},
 		],
-		callback: async ({ options }, context) => {
+		callback: async ({ options }, _context) => {
 			const oid = options.oid
 			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.oid, value)
