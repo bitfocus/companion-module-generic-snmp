@@ -9,7 +9,7 @@ To configure this module you will need:
 1. Agent Address - The IP Address of the SNMP enabled device you want to control
 2. UDP Port - The number of the UDP port on which the agent is listening (defaults to port 161)
 3. SNMP Version - The version of SNMP used by the agent. This will dictate how this module will authenticate with the agent
-4. Poll Interval - The poll interval for Get OID actions with update enabled.
+4. Poll Interval - The poll interval for Get OID value actions with update enabled, and *all* Get OID Value feedbacks.
 
 ### SNMP versions v1/v2c
 
@@ -59,3 +59,4 @@ You can perform the following actions with this module:
 - Get OID value
   - Always updates based on connection poll
   - Optional convert returned OctetString to DisplayString
+  - As a value feedback, it can be accessed in the `Local Variables` tab
