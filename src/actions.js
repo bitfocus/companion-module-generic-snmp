@@ -11,22 +11,20 @@ export const OidOption = {
 	useVariables: { local: true },
 }
 
+const ValueOption = {
+	type: 'textinput',
+	label: 'Value',
+	id: 'value',
+	default: '',
+	required: true,
+	regex: Regex.SOMETHING,
+	useVariables: { local: true },
+}
 export default async function (self) {
 	const actionDefs = {}
 	actionDefs['setString'] = {
 		name: 'Set OID value to an OctetString',
-		options: [
-			OidOption,
-			{
-				type: 'textinput',
-				label: 'Value',
-				id: 'value',
-				default: '',
-				required: true,
-				regex: Regex.SOMETHING,
-				useVariables: { local: true },
-			},
-		],
+		options: [OidOption, ValueOption],
 		callback: async ({ options }, _context) => {
 			const oid = options.oid
 			const value = options.value
@@ -54,11 +52,8 @@ export default async function (self) {
 				default: snmp.ObjectType.Integer,
 			},
 			{
-				type: 'textinput',
-				label: 'Value',
-				id: 'value',
+				...ValueOption,
 				default: '0',
-				useVariables: { local: true },
 			},
 		],
 		callback: async ({ options }, _context) => {
@@ -114,18 +109,7 @@ export default async function (self) {
 
 	actionDefs['setIpAddress'] = {
 		name: 'Set OID value to an IP Address',
-		options: [
-			OidOption,
-			{
-				type: 'textinput',
-				label: 'Value',
-				id: 'value',
-				default: '',
-				required: true,
-				useVariables: { local: true },
-				regex: Regex.SOMETHING,
-			},
-		],
+		options: [OidOption, ValueOption],
 		callback: async ({ options }, _context) => {
 			const oid = options.oid
 			const value = options.value
@@ -135,18 +119,7 @@ export default async function (self) {
 
 	actionDefs['setOID'] = {
 		name: 'Set OID value to an OID',
-		options: [
-			OidOption,
-			{
-				type: 'textinput',
-				label: 'Value',
-				id: 'value',
-				default: '',
-				required: true,
-				useVariables: { local: true },
-				regex: Regex.SOMETHING,
-			},
-		],
+		options: [OidOption, ValueOption],
 		callback: async ({ options }, _context) => {
 			const oid = options.oid
 			const value = options.value
