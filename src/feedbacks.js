@@ -1,5 +1,4 @@
 import { Regex } from '@companion-module/base'
-import snmp from 'net-snmp'
 
 export default async function (self) {
 	const feedbackDefs = {}
@@ -25,6 +24,9 @@ export default async function (self) {
 			},
 		],
 		callback: async (feedback, _context) => {
+			if (!self.oidValues.has(feedback.options.oid)) {
+				self.getOid(feedback.options.oid, '', feedback.options.displaystring, null, feedback.id).catch(() => {})
+			}
 			return self.oidValues.get(feedback.id) ?? null
 		},
 		subscribe: async (feedback, context) => {
@@ -32,7 +34,7 @@ export default async function (self) {
 		},
 		learn: async (feedback, context) => {
 			await self.getOid(feedback.options.oid, '', feedback.options.displaystring, context, feedback.id)
-            return undefined
+			return undefined
 		},
 	}
 
