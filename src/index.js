@@ -184,10 +184,10 @@ class Generic_SNMP extends InstanceBase {
 						if (this.config.verbose)
 							this.log(
 								'debug',
-								`OID: ${varbinds[0].oid} type: ${snmp.ObjectType[varbinds[0].type]} value: ${value} setting to: ${customVariable}`,
+								`OID: ${varbinds[0].oid} type: ${snmp.ObjectType[varbinds[0].type]} value: ${value} setting to: ${customVariable || feedbackId}`,
 							)
 						this.oidValues.set(varbinds[0].oid, value)
-						if (customVariable) context.setCustomVariableValue(customVariable, value)
+						if (customVariable && context !== null) context.setCustomVariableValue(customVariable, value)
 						if (feedbackId) {
 							this.feedbackIdsToCheck.add(feedbackId)
 							this.throttledFeedbackIdCheck()
@@ -212,6 +212,8 @@ class Generic_SNMP extends InstanceBase {
 
 	throttledFeedbackIdCheck = throttle(
 		() => {
+			if (this.config.verbose)
+				this.log('debug', `Checking feedbacks for IDs: ${[...this.feedbackIdsToCheck].join(', ')}`)
 			this.checkFeedbacksById(...this.feedbackIdsToCheck)
 			this.feedbackIdsToCheck.clear()
 		},
