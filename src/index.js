@@ -3,7 +3,9 @@ import snmp from 'net-snmp'
 import PQueue from 'p-queue'
 import * as config from './configs.js'
 import UpdateActions from './actions.js'
+import UpdateFeedbacks from './feedbacks.js'
 import UpgradeScripts from './upgrades.js'
+import { throttle } from 'es-toolkit'
 
 const trimOid = (oid) => {
 	while (oid.startsWith('.')) {
@@ -12,6 +14,8 @@ const trimOid = (oid) => {
 	return oid.trim()
 }
 
+const isValidSnmpOid = (value) => /^(0|1|2)(\.(0|[1-9]\d*))+$/u.test(value)
+
 class Generic_SNMP extends InstanceBase {
 	constructor(internal) {
 		super(internal)
@@ -19,25 +23,29 @@ class Generic_SNMP extends InstanceBase {
 		Object.assign(this, {
 			...config,
 		})
-
+		this.oidValues = new Map()
+		this.feedbackIdsToCheck = new Set()
 		this.session = null
 	}
 
-	async init(config) {
+	async init(config, _isFirstInit, secrets) {
 		this.snmpQueue = new PQueue({ concurrency: 1, interval: 10, intervalCap: 1 })
 		process.titie = this.label.replaceAll(/[^a-zA-Z0-9-_.]/gm, '')
 		this.config = config
+		this.secrets = secrets
 		this.updateActions()
+		this.updateFeedbacks()
 		this.connectAgent()
 		if (this.config.interval > 0) {
 			this.pollOids()
 		}
 	}
 
-	async configUpdated(config) {
+	async configUpdated(config, secrets) {
 		this.snmpQueue.clear()
 		process.titie = this.label.replaceAll(/[^a-zA-Z0-9-_.]/gm, '')
 		this.config = config
+		this.secrets = secrets
 		if (this.pollTimer) {
 			clearTimeout(this.pollTimer)
 			delete this.pollTimer
@@ -99,23 +107,23 @@ class Generic_SNMP extends InstanceBase {
 		}
 
 		if (this.config.securityLevel !== 'noAuthNoPriv') {
-			if (this.config.authKey === undefined || this.config.authKey === '') {
+			if (this.secrets.authKey === undefined || this.secrets.authKey === '') {
 				this.log('warn', 'please specify an Auth Key when Security level is authNoPriv or authPriv.')
 				this.updateStatus(InstanceStatus.BadConfig, 'Missing Auth Key')
 				return
 			}
 
 			user.authProtocol = snmp.AuthProtocols[this.config.authProtocol]
-			user.authKey = this.config.authKey
+			user.authKey = this.secrets.authKey
 
 			if (this.config.securityLevel == 'authPriv') {
-				if (this.config.privKey === undefined || this.config.privKey === '') {
+				if (this.secrets.privKey === undefined || this.secrets.privKey === '') {
 					this.log('warn', 'Please specify a Priv Key when Security level is authPriv.')
 					this.updateStatus(InstanceStatus.BadConfig, 'Missing Priv Key')
 					return
 				}
 				user.privProtocol = snmp.PrivProtocols[this.config.privProtocol]
-				user.privKey = this.config.privKey
+				user.privKey = this.secrets.privKey
 			}
 		}
 
@@ -133,6 +141,10 @@ class Generic_SNMP extends InstanceBase {
 
 	async setOid(oid, type, value) {
 		oid = trimOid(oid)
+		if (!isValidSnmpOid(oid)) {
+			this.log('warn', `Invalid OID: ${oid}`)
+			return
+		}
 		if (oid.length == 0) return
 		await this.snmpQueue.add(() => {
 			this.session.set([{ oid, type, value }], (error) => {
@@ -145,12 +157,16 @@ class Generic_SNMP extends InstanceBase {
 		})
 	}
 
-	async getOid(oid, customVariable, displaystring, context) {
+	async getOid(oid, customVariable, displaystring, context, feedbackId = '') {
 		const bufferToBigInt = (buffer, start = 0, end = buffer.length) => {
 			const bufferAsHexString = buffer.slice(start, end).toString('hex')
 			return BigInt(`0x${bufferAsHexString}`)
 		}
 		oid = trimOid(oid)
+		if (!isValidSnmpOid(oid)) {
+			this.log('warn', `Invalid OID: ${oid}`)
+			return
+		}
 		if (oid.length == 0) return
 		await this.snmpQueue.add(() => {
 			try {
@@ -168,9 +184,14 @@ class Generic_SNMP extends InstanceBase {
 						if (this.config.verbose)
 							this.log(
 								'debug',
-								`OID: ${varbinds[0].oid} type: ${snmp.ObjectType[varbinds[0].type]} value: ${value} setting to: ${customVariable}`,
+								`OID: ${varbinds[0].oid} type: ${snmp.ObjectType[varbinds[0].type]} value: ${value} setting to: ${customVariable || feedbackId}`,
 							)
-						context.setCustomVariableValue(customVariable, value)
+						this.oidValues.set(varbinds[0].oid, value)
+						if (customVariable && context !== null) context.setCustomVariableValue(customVariable, value)
+						if (feedbackId) {
+							this.feedbackIdsToCheck.add(feedbackId)
+							this.throttledFeedbackIdCheck()
+						}
 					}).bind(this),
 				)
 			} catch (e) {
@@ -181,6 +202,7 @@ class Generic_SNMP extends InstanceBase {
 
 	pollOids() {
 		this.subscribeActions('getOID')
+		this.subscribeFeedbacks('getOID')
 		if (this.config.interval > 0) {
 			this.pollTimer = setTimeout(() => {
 				this.pollOids()
@@ -188,9 +210,21 @@ class Generic_SNMP extends InstanceBase {
 		}
 	}
 
+	throttledFeedbackIdCheck = throttle(
+		() => {
+			if (this.config.verbose)
+				this.log('debug', `Checking feedbacks for IDs: ${[...this.feedbackIdsToCheck].join(', ')}`)
+			this.checkFeedbacksById(...this.feedbackIdsToCheck)
+			this.feedbackIdsToCheck.clear()
+		},
+		30,
+		{ leading: false, trailing: true },
+	)
+
 	async destroy() {
-		this.log('debug', `destroy ${this.id}`)
+		this.log('debug', `destroy ${this.id}:${this.label}`)
 		this.snmpQueue.clear()
+		this.throttledFeedbackIdCheck.cancel()
 		if (this.pollTimer) {
 			clearTimeout(this.pollTimer)
 			delete this.pollTimer
@@ -200,6 +234,10 @@ class Generic_SNMP extends InstanceBase {
 
 	updateActions() {
 		UpdateActions(this)
+	}
+
+	updateFeedbacks() {
+		UpdateFeedbacks(this)
 	}
 }
 

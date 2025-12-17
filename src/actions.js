@@ -1,33 +1,42 @@
 import { Regex } from '@companion-module/base'
 import snmp from 'net-snmp'
 
+export const OidOption = {
+	type: 'textinput',
+	label: 'OID',
+	id: 'oid',
+	default: '',
+	required: true,
+	regex: Regex.SOMETHING,
+	useVariables: { local: true },
+}
+
+const ValueOption = {
+	type: 'textinput',
+	label: 'Value',
+	id: 'value',
+	default: '',
+	required: true,
+	regex: Regex.SOMETHING,
+	useVariables: { local: true },
+}
+
+export const DisplayStringOption = {
+	type: 'checkbox',
+	label: 'DisplayString',
+	id: 'displaystring',
+	tooltip: 'Convert OctetString (array of numbers) to DisplayString (text)',
+	default: true,
+}
+
 export default async function (self) {
-	let actionDefs = []
+	const actionDefs = {}
 	actionDefs['setString'] = {
 		name: 'Set OID value to an OctetString',
-		options: [
-			{
-				type: 'textinput',
-				label: 'OID',
-				id: 'oid',
-				default: '',
-				required: true,
-				regex: Regex.SOMETHING,
-				useVariables: { local: true },
-			},
-			{
-				type: 'textinput',
-				label: 'Value',
-				id: 'value',
-				default: '',
-				required: true,
-				regex: Regex.SOMETHING,
-				useVariables: { local: true },
-			},
-		],
-		callback: async ({ options }, context) => {
-			const oid = await context.parseVariablesInString(options.oid)
-			const value = await context.parseVariablesInString(options.value)
+		options: [OidOption, ValueOption],
+		callback: async ({ options }, _context) => {
+			const oid = options.oid
+			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.OctetString, value)
 		},
 	}
@@ -35,15 +44,7 @@ export default async function (self) {
 	actionDefs['setNumber'] = {
 		name: 'Set OID value to a Number',
 		options: [
-			{
-				type: 'textinput',
-				label: 'OID',
-				id: 'oid',
-				default: '',
-				required: true,
-				regex: Regex.SOMETHING,
-				useVariables: { local: true },
-			},
+			OidOption,
 			{
 				type: 'dropdown',
 				label: 'Type',
@@ -60,16 +61,13 @@ export default async function (self) {
 				default: snmp.ObjectType.Integer,
 			},
 			{
-				type: 'textinput',
-				label: 'Value',
-				id: 'value',
+				...ValueOption,
 				default: '0',
-				useVariables: { local: true },
 			},
 		],
-		callback: async ({ options }, context) => {
-			const oid = await context.parseVariablesInString(options.oid)
-			const intValue = parseInt(await context.parseVariablesInString(options.value))
+		callback: async ({ options }, _context) => {
+			const oid = options.oid
+			const intValue = parseInt(options.value)
 
 			if (Number.isNaN(intValue)) {
 				self.log('warn', `Value "${intValue}" is not an number. SNMP message not sent.`)
@@ -78,40 +76,46 @@ export default async function (self) {
 
 			await self.setOid(oid, options.type, intValue)
 		},
+		learn: async ({ options }, context) => {
+			await self.getOid(options.oid, '', options.displaystring, context)
+			if (self.oidValues.has(options.oid)) {
+				return {
+					...options,
+					value: self.oidValues.get(options.oid).toString(),
+				}
+			}
+			return undefined
+		},
 	}
 
 	actionDefs['setBoolean'] = {
 		name: 'Set OID value to a Boolean',
 		options: [
+			OidOption,
 			{
 				type: 'textinput',
-				label: 'OID',
-				id: 'oid',
-				default: '',
-				required: true,
-				useVariables: { local: true },
-				regex: Regex.SOMETHING,
-			},
-			{
-				type: 'textinput',
-				label: 'Value (true/false, yes/no)',
+				label: 'Value (true/false, yes/no, on/off, 1/0)',
 				id: 'value',
 				default: 'true',
 				useVariables: { local: true },
 			},
 		],
-		callback: async ({ options }, context) => {
-			const oid = await context.parseVariablesInString(options.oid)
-			const parsedValue = await context.parseVariablesInString(options.value)
+		callback: async ({ options }, _context) => {
+			const oid = options.oid
+			const parsedValue = options.value
 			let booleanValue = false
 
 			switch (parsedValue.trim().toLocaleLowerCase()) {
 				case 'true':
+				case 'on':
+				case '1':
 				case 'yes': {
 					booleanValue = true
 					break
 				}
 				case 'false':
+				case 'off':
+				case '0':
 				case 'no': {
 					booleanValue = false
 					break
@@ -124,77 +128,61 @@ export default async function (self) {
 
 			await self.setOid(oid, snmp.ObjectType.Boolean, booleanValue)
 		},
+		learn: async ({ options }, context) => {
+			await self.getOid(options.oid, '', options.displaystring, context)
+			if (self.oidValues.has(options.oid)) {
+				return {
+					...options,
+					value: self.oidValues.get(options.oid).toString(),
+				}
+			}
+			return undefined
+		},
 	}
 
 	actionDefs['setIpAddress'] = {
 		name: 'Set OID value to an IP Address',
-		options: [
-			{
-				type: 'textinput',
-				label: 'OID',
-				id: 'oid',
-				default: '',
-				required: true,
-				useVariables: { local: true },
-				regex: Regex.SOMETHING,
-			},
-			{
-				type: 'textinput',
-				label: 'Value',
-				id: 'value',
-				default: '',
-				required: true,
-				useVariables: { local: true },
-				regex: Regex.SOMETHING,
-			},
-		],
-		callback: async ({ options }, context) => {
-			const oid = await context.parseVariablesInString(options.oid)
-			const value = await context.parseVariablesInString(options.value)
+		options: [OidOption, ValueOption],
+		callback: async ({ options }, _context) => {
+			const oid = options.oid
+			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.IpAddress, value)
+		},
+		learn: async ({ options }, context) => {
+			await self.getOid(options.oid, '', options.displaystring, context)
+			if (self.oidValues.has(options.oid)) {
+				return {
+					...options,
+					value: self.oidValues.get(options.oid).toString(),
+				}
+			}
+			return undefined
 		},
 	}
 
 	actionDefs['setOID'] = {
 		name: 'Set OID value to an OID',
-		options: [
-			{
-				type: 'textinput',
-				label: 'OID',
-				id: 'oid',
-				default: '',
-				required: true,
-				useVariables: { local: true },
-				regex: Regex.SOMETHING,
-			},
-			{
-				type: 'textinput',
-				label: 'Value',
-				id: 'value',
-				default: '',
-				required: true,
-				useVariables: { local: true },
-				regex: Regex.SOMETHING,
-			},
-		],
-		callback: async ({ options }, context) => {
-			const oid = await context.parseVariablesInString(options.oid)
-			const value = await context.parseVariablesInString(options.value)
+		options: [OidOption, ValueOption],
+		callback: async ({ options }, _context) => {
+			const oid = options.oid
+			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.oid, value)
+		},
+		learn: async ({ options }, context) => {
+			await self.getOid(options.oid, '', options.displaystring, context)
+			if (self.oidValues.has(options.oid)) {
+				return {
+					...options,
+					value: self.oidValues.get(options.oid).toString(),
+				}
+			}
+			return undefined
 		},
 	}
 	actionDefs['getOID'] = {
 		name: 'Get OID value',
 		options: [
-			{
-				type: 'textinput',
-				label: 'OID',
-				id: 'oid',
-				default: '',
-				required: true,
-				useVariables: { local: true },
-				regex: Regex.SOMETHING,
-			},
+			OidOption,
 			{
 				type: 'custom-variable',
 				label: 'Variable',
@@ -208,31 +196,19 @@ export default async function (self) {
 				tooltip: 'Update each poll interval',
 				default: false,
 			},
-			{
-				type: 'checkbox',
-				label: 'DisplayString',
-				id: 'displaystring',
-				tooltip: 'Convert OctetString (array of numbers) to DisplayString (text)',
-				default: false,
-			},
+			DisplayStringOption,
 		],
 		callback: async ({ options }, context) => {
-			await self.getOid(
-				await context.parseVariablesInString(options.oid),
-				options.variable,
-				options.displaystring,
-				context,
-			)
+			await self.getOid(options.oid, options.variable, options.displaystring, context)
 		},
 		subscribe: async ({ options }, context) => {
 			if (options.update) {
-				await self.getOid(
-					await context.parseVariablesInString(options.oid),
-					options.variable,
-					options.displaystring,
-					context,
-				)
+				await self.getOid(options.oid, options.variable, options.displaystring, context)
 			}
+		},
+		learn: async ({ options }, context) => {
+			await self.getOid(options.oid, options.variable, options.displaystring, context)
+			return undefined
 		},
 	}
 
