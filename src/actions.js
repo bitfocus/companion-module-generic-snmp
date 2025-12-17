@@ -20,6 +20,15 @@ const ValueOption = {
 	regex: Regex.SOMETHING,
 	useVariables: { local: true },
 }
+
+export const DisplayStringOption = {
+	type: 'checkbox',
+	label: 'DisplayString',
+	id: 'displaystring',
+	tooltip: 'Convert OctetString (array of numbers) to DisplayString (text)',
+	default: true,
+}
+
 export default async function (self) {
 	const actionDefs = {}
 	actionDefs['setString'] = {
@@ -187,13 +196,7 @@ export default async function (self) {
 				tooltip: 'Update each poll interval',
 				default: false,
 			},
-			{
-				type: 'checkbox',
-				label: 'DisplayString',
-				id: 'displaystring',
-				tooltip: 'Convert OctetString (array of numbers) to DisplayString (text)',
-				default: false,
-			},
+			DisplayStringOption,
 		],
 		callback: async ({ options }, context) => {
 			await self.getOid(options.oid, options.variable, options.displaystring, context)
