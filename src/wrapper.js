@@ -1,4 +1,4 @@
-const { EventEmitter } = require('events')
+import { EventEmitter } from 'events'
 
 /**
  * Wrapper for Companion's SharedUDPSocket that implements the dgram.Socket interface
