@@ -416,7 +416,7 @@ class Generic_SNMP extends InstanceBase {
 			this.feedbackIdsToCheck.clear()
 		},
 		30,
-		{ leading: false, trailing: true },
+		{ edges: ['trailing'] },
 	)
 
 	async destroy() {
