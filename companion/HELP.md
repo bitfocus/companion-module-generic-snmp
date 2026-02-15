@@ -61,8 +61,8 @@ You can perform the following actions with this module:
 - Get OID value
   - Always updates based on connection poll
   - May also be updated via SNMP Trap
-  - Optional convert returned OctetString to DisplayString, traps always converted to display string
+  - Optional convert returned OctetString to DisplayString, traps always converted to DisplayString
   - As a value feedback, it can be accessed in the `Local Variables` tab
 - OID Trap value
   - Does not poll for updates
-  - Traps always converted to display string
+  - Traps always converted to DisplayString
