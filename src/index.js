@@ -295,6 +295,10 @@ class Generic_SNMP extends InstanceBase {
 		}
 		if (Array.isArray(trap.pdu.varbinds)) {
 			trap.pdu.varbinds.forEach((varbind) => {
+				if (snmp.isVarbindError(varbind)) {
+					this.log('debug', `Trap Varbind error: ${snmp.varbindError(varbind)}`)
+					return
+				}
 				if ('type' in varbind && 'value' in varbind) {
 					let value
 					if (varbind.type == snmp.ObjectType.Counter64) {
@@ -328,18 +332,21 @@ class Generic_SNMP extends InstanceBase {
 		if (!isValidSnmpOid(oid) || oid.length == 0) {
 			throw new Error(`Invalid OID: ${oid}`)
 		}
-		await this.snmpQueue.add(() => {
-			return new Promise((resolve, reject) => {
-				this.session.set([{ oid, type, value }], (error) => {
-					if (error) {
-						reject(error)
-					} else {
-						if (this.config.verbose) this.log('debug', `Set OID: ${oid} type: ${type} value: ${value}`)
-						resolve()
-					}
+		await this.snmpQueue.add(
+			() => {
+				return new Promise((resolve, reject) => {
+					this.session.set([{ oid, type, value }], (error) => {
+						if (error) {
+							reject(error)
+						} else {
+							if (this.config.verbose) this.log('debug', `Set OID: ${oid} type: ${type} value: ${value}`)
+							resolve()
+						}
+					})
 				})
-			})
-		})
+			},
+			{ priority: 1 },
+		)
 	}
 
 	/**
@@ -358,31 +365,37 @@ class Generic_SNMP extends InstanceBase {
 		if (!isValidSnmpOid(oid) || oid.length == 0) {
 			throw new Error(`Invalid OID: ${oid}`)
 		}
-		return await this.snmpQueue.add(() => {
-			return new Promise((resolve, reject) => {
-				this.session.get(
-					[oid],
-					((error, varbinds) => {
-						if (error) {
-							reject(error)
-						}
-						/** @type {SNMPValue} */
-						let value
-						if (varbinds[0].type == snmp.ObjectType.Counter64) {
-							value = bufferToBigInt(varbinds[0].value).toString()
-						} else value = displaystring ? varbinds[0].value.toString() : varbinds[0].value
-						if (this.config.verbose)
-							this.log('debug', `OID: ${varbinds[0].oid} type: ${snmp.ObjectType[varbinds[0].type]} value: ${value}`)
-						this.oidValues.set(varbinds[0].oid, value)
-						if (customVariable && context !== null) context.setCustomVariableValue(customVariable, value)
-						const affectedFeedbackIds = this.feedbackTracker.getFeedbackIdsForOid(varbinds[0].oid)
-						affectedFeedbackIds.forEach((id) => this.feedbackIdsToCheck.add(id))
-						if (this.feedbackIdsToCheck.size > 0) this.throttledFeedbackIdCheck()
-						resolve(value)
-					}).bind(this),
-				)
-			})
-		})
+		return await this.snmpQueue.add(
+			() => {
+				return new Promise((resolve, reject) => {
+					this.session.get(
+						[oid],
+						((error, varbinds) => {
+							if (error) {
+								reject(error)
+							}
+							if (snmp.isVarbindError(varbinds[0])) {
+								reject(`Get OID: ${oid} Varbind error: ${snmp.varbindError(varbinds[0])}`)
+							}
+							/** @type {SNMPValue} */
+							let value
+							if (varbinds[0].type == snmp.ObjectType.Counter64) {
+								value = bufferToBigInt(varbinds[0].value).toString()
+							} else value = displaystring ? varbinds[0].value.toString() : varbinds[0].value
+							if (this.config.verbose)
+								this.log('debug', `OID: ${varbinds[0].oid} type: ${snmp.ObjectType[varbinds[0].type]} value: ${value}`)
+							this.oidValues.set(varbinds[0].oid, value)
+							if (customVariable && context !== null) context.setCustomVariableValue(customVariable, value)
+							const affectedFeedbackIds = this.feedbackTracker.getFeedbackIdsForOid(varbinds[0].oid)
+							affectedFeedbackIds.forEach((id) => this.feedbackIdsToCheck.add(id))
+							if (this.feedbackIdsToCheck.size > 0) this.throttledFeedbackIdCheck()
+							resolve(value)
+						}).bind(this),
+					)
+				})
+			},
+			{ priority: 0 },
+		)
 	}
 
 	pollOids() {
