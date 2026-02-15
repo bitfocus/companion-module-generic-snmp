@@ -93,4 +93,19 @@ export default [
 		result.updatedConfig = config
 		return result
 	},
+
+	function v240(_context, props) {
+		const result = {
+			updatedActions: [],
+			updatedConfig: null,
+			updatedSecrets: null,
+			updatedFeedbacks: [],
+		}
+		const config = props.config
+		config.traps ??= false
+		config.portBind ??= 162
+
+		result.updatedConfig = config
+		return result
+	},
 ]

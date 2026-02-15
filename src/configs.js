@@ -1,6 +1,6 @@
 import { Regex } from '@companion-module/base'
 
-export function getConfigFields() {
+export default function () {
 	return [
 		{
 			type: 'static-text',
@@ -44,6 +44,31 @@ export function getConfigFields() {
 			],
 			default: 'v1',
 			require: true,
+		},
+		{
+			type: 'checkbox',
+			id: 'traps',
+			label: 'Listen for Traps',
+			default: false,
+			width: 6,
+		},
+		{
+			type: 'number',
+			id: 'portBind',
+			label: 'Listening Port',
+			width: 6,
+			min: 162,
+			max: 65535,
+			default: 162,
+			required: true,
+			isVisibleExpression: `$(options:traps)`,
+		},
+		{
+			type: 'static-text',
+			id: 'portBindFiller',
+			width: 6,
+			value: '',
+			isVisibleExpression: ` !$(options:traps)'`,
 		},
 		{
 			type: 'textinput',

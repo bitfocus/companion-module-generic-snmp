@@ -5,9 +5,9 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@companion-module/base@npm:~1.14.0":
-  version: 1.14.0
-  resolution: "@companion-module/base@npm:1.14.0"
+"@companion-module/base@npm:~1.14.1":
+  version: 1.14.1
+  resolution: "@companion-module/base@npm:1.14.1"
   dependencies:
     ajv: "npm:^8.17.1"
     colord: "npm:^2.9.3"
@@ -18,7 +18,7 @@ __metadata:
     p-queue: "npm:^6.6.2"
     p-timeout: "npm:^4.1.0"
     tslib: "npm:^2.8.1"
-  checksum: 10c0/e9d79d01d024f4cbea2b58ba66d422ed8cd874a5f092a25c7c27220b52c34bfe3e5289758cf5dd40f5f36619bcf7e9f7ad978495d8010270dfd0e85bc9c8bf58
+  checksum: 10c0/55296836c01197e811ccf5dac9faa2b815668532754315c00b5fc14193fc969f58da0fc2e62eb572f0a3cfc1901ad56574000b389a386f8d929f4a9c6237140f
   languageName: node
   linkType: hard
 
@@ -830,15 +830,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"es-toolkit@npm:^1.43.0":
-  version: 1.43.0
-  resolution: "es-toolkit@npm:1.43.0"
+"es-toolkit@npm:^1.44.0":
+  version: 1.44.0
+  resolution: "es-toolkit@npm:1.44.0"
   dependenciesMeta:
     "@trivago/prettier-plugin-sort-imports@4.3.0":
       unplugged: true
     prettier-plugin-sort-re-exports@0.0.1:
       unplugged: true
-  checksum: 10c0/bbff0b591fd01be9f37a34dad7964b590e4952fc594c1230140771687f05136caa6ab21962a6e9cde7c4b529a149171ed5179d6379d4a8e656dbf7e8d126999c
+  checksum: 10c0/b80ff52ddc85ba26914cda57c9d4e46379ccc38c60dc097ef0d065cc0b20f95a16cf8d537969eea600b51c6687b5900a6cce67489db16d5ccc14d47597a29c34
   languageName: node
   linkType: hard
 
@@ -1203,13 +1203,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "generic-snmp@workspace:."
   dependencies:
-    "@companion-module/base": "npm:~1.14.0"
+    "@companion-module/base": "npm:~1.14.1"
     "@companion-module/tools": "npm:^2.6.1"
-    es-toolkit: "npm:^1.43.0"
+    es-toolkit: "npm:^1.44.0"
     eslint: "npm:^9.39.2"
-    net-snmp: "npm:^3.26.0"
-    p-queue: "npm:^9.0.1"
-    prettier: "npm:^3.7.4"
+    net-snmp: "npm:^3.26.1"
+    p-queue: "npm:^9.1.0"
+    prettier: "npm:^3.8.1"
   languageName: unknown
   linkType: soft
 
@@ -1582,13 +1582,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"net-snmp@npm:^3.26.0":
-  version: 3.26.0
-  resolution: "net-snmp@npm:3.26.0"
+"net-snmp@npm:^3.26.1":
+  version: 3.26.1
+  resolution: "net-snmp@npm:3.26.1"
   dependencies:
     asn1-ber: "npm:^1.2.1"
     smart-buffer: "npm:^4.1.0"
-  checksum: 10c0/b26ddee343c2a4c39d1e448b19907891728dd051bfd29742ee5d8d41629ed4b74c8bdd4182cf60a2a4429600b711016959616096dda0cb4ae9d2da8e0b58746f
+  checksum: 10c0/e3c7d02511d78a97dc66dd9a9bc3a928f0cb8698c04f8bb9be7d65d91c114d51e22599ee3b71ac5ed2da0b1a4bab10ea01c9b97d832a3ac20ba6d0a88926bd23
   languageName: node
   linkType: hard
 
@@ -1684,13 +1684,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"p-queue@npm:^9.0.1":
-  version: 9.0.1
-  resolution: "p-queue@npm:9.0.1"
+"p-queue@npm:^9.1.0":
+  version: 9.1.0
+  resolution: "p-queue@npm:9.1.0"
   dependencies:
     eventemitter3: "npm:^5.0.1"
     p-timeout: "npm:^7.0.0"
-  checksum: 10c0/912bd0c09ec910e6851973757afd23b80e12210948b4e235ebaa752e32e782d7664438c948cd343e2620cf26340665ccdaa2715e4e3c52cf02fe11c5152c225f
+  checksum: 10c0/f6bb4644997c20cbbf68c0c88208283697c6c9b1e1879f2073791b1ffcb2d2eb0a9fe35c9631e0c74bd6562ef159b87b418d48df7e7b30e5ddb4d99055bb5c92
   languageName: node
   linkType: hard
 
@@ -1809,12 +1809,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.7.4":
-  version: 3.7.4
-  resolution: "prettier@npm:3.7.4"
+"prettier@npm:^3.8.1":
+  version: 3.8.1
+  resolution: "prettier@npm:3.8.1"
   bin:
     prettier: bin/prettier.cjs
-  checksum: 10c0/9675d2cd08eacb1faf1d1a2dbfe24bfab6a912b059fc9defdb380a408893d88213e794a40a2700bd29b140eb3172e0b07c852853f6e22f16f3374659a1a13389
+  checksum: 10c0/33169b594009e48f570471271be7eac7cdcf88a209eed39ac3b8d6d78984039bfa9132f82b7e6ba3b06711f3bfe0222a62a1bfb87c43f50c25a83df1b78a2c42
   languageName: node
   linkType: hard
 

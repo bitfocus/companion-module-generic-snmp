@@ -70,8 +70,7 @@ export default async function (self) {
 			const intValue = parseInt(options.value)
 
 			if (Number.isNaN(intValue)) {
-				self.log('warn', `Value "${intValue}" is not an number. SNMP message not sent.`)
-				return
+				throw new Error(`Value "${intValue}" is not an number. SNMP message not sent.`)
 			}
 
 			await self.setOid(oid, options.type, intValue)
@@ -121,8 +120,7 @@ export default async function (self) {
 					break
 				}
 				default: {
-					self.log('warn', `Value "${parsedValue}" is not an boolean. SNMP message not sent.`)
-					return
+					throw new Error(`Value "${parsedValue}" is not an boolean. SNMP message not sent.`)
 				}
 			}
 
