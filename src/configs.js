@@ -3,17 +3,6 @@ import { Regex } from '@companion-module/base'
 export default function () {
 	return [
 		{
-			type: 'static-text',
-			id: 'info',
-			width: 12,
-			label: 'Information',
-			value: `PLEASE READ THIS! Generic modules are only for use with custom applications.
-					If you use this module to control a device or software on the market that more than you are using,
-					PLEASE let us know about this software, so we can make a proper module for it.
-					If we already support this and you use this to trigger a feature our module doesn't support, 
-					please let us know. We want Companion to be as easy as possible to use for anyone.`,
-		},
-		{
 			type: 'textinput',
 			id: 'ip',
 			label: 'Agent Address',
@@ -43,32 +32,7 @@ export default function () {
 				{ id: 'v3', label: 'SNMP v3' },
 			],
 			default: 'v1',
-			require: true,
-		},
-		{
-			type: 'checkbox',
-			id: 'traps',
-			label: 'Listen for Traps',
-			default: false,
-			width: 6,
-		},
-		{
-			type: 'number',
-			id: 'portBind',
-			label: 'Listening Port',
-			width: 6,
-			min: 162,
-			max: 65535,
-			default: 162,
 			required: true,
-			isVisibleExpression: `$(options:traps)`,
-		},
-		{
-			type: 'static-text',
-			id: 'portBindFiller',
-			width: 6,
-			value: '',
-			isVisibleExpression: ` !$(options:traps)'`,
 		},
 		{
 			type: 'textinput',
@@ -82,7 +46,7 @@ export default function () {
 			type: 'static-text',
 			id: 'infov3',
 			width: 12,
-			value: '<h5>SNMP v3 Configuration</h5>',
+			value: '<h6>SNMP v3 Configuration</h6>',
 			isVisibleExpression: ` $(options:version) === 'v3'`,
 		},
 		{
@@ -154,6 +118,25 @@ export default function () {
 			width: 6,
 			default: '',
 			isVisibleExpression: ` $(options:version) === 'v3' && $(options:securityLevel) === 'authPriv' `,
+		},
+		{
+			type: 'checkbox',
+			id: 'traps',
+			label: 'Listen for Traps',
+			default: false,
+			width: 6,
+		},
+		{
+			type: 'number',
+			id: 'portBind',
+			label: 'Listening Port',
+			width: 6,
+			min: 162,
+			max: 65535,
+			default: 162,
+			required: true,
+			isVisibleExpression: `$(options:traps)`,
+			description: 'Companion will bind to this port on 0.0.0.0 to listen for SNMP Traps',
 		},
 		{
 			type: 'number',
