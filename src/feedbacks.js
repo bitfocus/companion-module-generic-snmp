@@ -19,7 +19,7 @@ export default async function (self) {
 			await self.getOid(feedback.options.oid, '', feedback.options.displaystring, context)
 		},
 		learn: async (feedback, context) => {
-			self.oidTracker.addFeedback(feedback.id, feedback.options.oid)
+			self.oidTracker.updateFeedback(feedback.id, feedback.options.oid)
 			await self.getOid(feedback.options.oid, '', feedback.options.displaystring, context)
 			return undefined
 		},
@@ -29,7 +29,7 @@ export default async function (self) {
 	}
 
 	feedbackDefs['listenOIDTrap'] = {
-		name: 'OID Trap Value',
+		name: 'OID Trap value',
 		type: 'value',
 		options: [OidOption],
 		callback: async (feedback, _context) => {

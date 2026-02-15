@@ -260,12 +260,10 @@ class Generic_SNMP extends InstanceBase {
 					if (error) {
 						this.log('warn', `SNMP trap error: ${error.message}`)
 					} else {
-						if (this.config.verbose) {
-							this.log('info', `Received trap from ${this.config.ip}: ${JSON.stringify(trap)}`)
-						}
 						this.processTrap(trap)
 					}
 				})
+				this.log('info', `Listening to Port ${this.config.portBind} for Traps from ${this.config.ip}`)
 				resolve()
 			})
 
