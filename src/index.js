@@ -179,6 +179,14 @@ class Generic_SNMP extends InstanceBase {
 					this.updateStatus(InstanceStatus.BadConfig, 'Missing Priv Key')
 					return
 				}
+				if (!process.execArgv.includes('--openssl-legacy-provider') && this.config.privProtocol == 'des') {
+					this.log(
+						'error',
+						`Process running without --openssl-legacy-providers flag. DES protocol can not be used. Only supported in Companion v4.2.5 or later`,
+					)
+					this.updateStatus(InstanceStatus.BadConfig, 'Insufficient Permissions')
+					return
+				}
 				user.privProtocol = snmp.PrivProtocols[this.config.privProtocol]
 				user.privKey = this.secrets.privKey
 			}

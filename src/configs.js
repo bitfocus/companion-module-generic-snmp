@@ -1,6 +1,14 @@
 import { Regex } from '@companion-module/base'
 
 export default function () {
+	const hasLegacyProviders = process.execArgv.includes('--openssl-legacy-provider')
+	const privProtocols = [
+		{ id: 'aes', label: '128-bit AES encryption (CFB-AES-128)' },
+		{ id: 'aes256b', label: '256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localiztaion' },
+		{ id: 'aes256r', label: '256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion' },
+	]
+	if (hasLegacyProviders) privProtocols.push({ id: 'des', label: 'DES encryption (CBC-DES)' })
+
 	return [
 		{
 			type: 'textinput',
@@ -103,11 +111,7 @@ export default function () {
 			id: 'privProtocol',
 			label: 'Priv Protocol',
 			width: 6,
-			choices: [
-				{ id: 'aes', label: '128-bit AES encryption (CFB-AES-128)' },
-				{ id: 'aes256b', label: '256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localiztaion' },
-				{ id: 'aes256r', label: '256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion' },
-			],
+			choices: privProtocols,
 			default: 'aes',
 			isVisibleExpression: ` $(options:version) === 'v3' && $(options:securityLevel) === 'authPriv' `,
 		},

@@ -22,7 +22,10 @@
 		"type": "node22",
 		"api": "nodejs-ipc",
 		"apiVersion": "0.0.0",
-		"entrypoint": "..\\src\\index.js"
+		"entrypoint": "..\\src\\index.js",
+		"permissions": {
+			"insecure-algorithms": true
+		}
 	},
 	"manufacturer": "Generic",
 	"products": ["SNMP Requests"],
