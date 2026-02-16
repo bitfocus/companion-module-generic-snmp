@@ -182,7 +182,7 @@ class Generic_SNMP extends InstanceBase {
 				if (!process.execArgv.includes('--openssl-legacy-provider') && this.config.privProtocol == 'des') {
 					this.log(
 						'error',
-						`Process running without --openssl-legacy-providers flag. DES protocol can not be used. Only supported in Companion v4.2.5 or later`,
+						`Process running without --openssl-legacy-provider flag.\nDES priv protocol cannot be used. Note: Only supported in Companion v4.2.5 or later`,
 					)
 					this.updateStatus(InstanceStatus.BadConfig, 'Insufficient Permissions')
 					return
