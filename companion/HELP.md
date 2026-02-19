@@ -37,7 +37,7 @@ If you selected SNMP version `v3` you will also need to configure the following:
    - `AES` - for 128-bit AES encryption (CFB-AES-128)'
    - `AES256B` - for 256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localiztaion
    - `AES256R` - 256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion
-   - `DES` - for DES encryption (CBC-DES). Requires Companion `4.2.5` or later.
+   - `DES` - for DES encryption (CBC-DES).
 7. `Priv Key` - Encryption Key (Available if Security Lavel is `authPriv`)
 
 ## Actions
