@@ -35,7 +35,9 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 		this.messageHandler = (msg, rinfo) => {
 			// Only emit if the source address matches
 			if (rinfo.address === this.allowedAddress) {
-				this.emit('message', msg, rinfo)
+				this.emit('message', Buffer.from(msg), rinfo)
+			} else {
+				console.log(`message recieved from: ${rinfo.address}:${rinfo.port}`)
 			}
 			// Otherwise silently drop
 		}
@@ -79,6 +81,22 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 			family: 'IPv4',
 			port: this.port,
 		}
+	}
+
+	/**
+	 * Get socket type
+	 */
+
+	get type() {
+		return 'udp4'
+	}
+
+	/**
+	 * Spoof createSocket, return self
+	 */
+
+	createSocket(_type) {
+		return this
 	}
 
 	/**
