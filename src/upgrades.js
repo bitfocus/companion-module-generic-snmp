@@ -104,6 +104,7 @@ export default [
 		const config = props.config
 		config.traps ??= false
 		config.portBind ??= 162
+		config.trapPort ??= 162
 
 		result.updatedConfig = config
 		return result

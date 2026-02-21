@@ -1,4 +1,4 @@
-import { trimOid, isValidSnmpOid } from './index.js'
+import { trimOid, isValidSnmpOid } from './oidUtils.js'
 
 /**
  * Manages bidirectional mapping between OIDs and feedback IDs for SNMP trap monitoring.

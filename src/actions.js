@@ -29,6 +29,165 @@ export const DisplayStringOption = {
 	default: true,
 }
 
+export const TrapOrInformOption = {
+	type: 'dropdown',
+	id: 'messageType',
+	label: 'Message Type',
+	choices: [
+		{ id: 'trap', label: 'Trap' },
+		{ id: 'inform', label: 'Inform' },
+	],
+	default: 'trap',
+}
+
+export const TrapOrOidOption = {
+	type: 'dropdown',
+	id: 'trapType',
+	label: 'Trap Type',
+	choices: [
+		{ id: snmp.TrapType.ColdStart, label: 'Cold Start' },
+		{ id: snmp.TrapType.WarmStart, label: 'Warm Start' },
+		{ id: snmp.TrapType.LinkDown, label: 'Link Down' },
+		{ id: snmp.TrapType.LinkUp, label: 'Link Up' },
+		{ id: snmp.TrapType.AuthenticationFailure, label: 'Authentication Failure' },
+		{ id: snmp.TrapType.EgpNeighborLoss, label: 'Egp Neighbor Loss' },
+		{ id: snmp.TrapType.EnterpriseSpecific, label: 'OID' },
+	],
+	default: snmp.TrapType.EnterpriseSpecific,
+}
+
+export const EnterpriseOidOption = {
+	type: 'textinput',
+	label: 'OID',
+	id: 'oidEnterprise',
+	default: '1.3.6.1.4.1.63849.1',
+	required: true,
+	regex: Regex.SOMETHING,
+	useVariables: { local: true },
+	isVisibleExpression: `$(options:trapType) == ${snmp.TrapType.EnterpriseSpecific}`,
+	description: 'Enterprise, Inform or Trap OID depending on configuration',
+}
+
+export const VarbindOidOption = {
+	type: 'textinput',
+	label: 'VarBind OID',
+	id: 'oidVarbind',
+	default: '1.3.6.1.4.1.63849.1',
+	required: true,
+	regex: Regex.SOMETHING,
+	useVariables: { local: true },
+	isVisibleExpression: `$(options:trapType) == ${snmp.TrapType.EnterpriseSpecific}`,
+}
+
+export const ObjectTypeOptions = {
+	type: 'dropdown',
+	id: 'objectType',
+	label: 'VarBind Type',
+	choices: [
+		{ id: snmp.ObjectType.Boolean, label: 'Boolean' },
+		{ id: snmp.ObjectType.Integer, label: 'Integer' },
+		{ id: snmp.ObjectType.Counter, label: 'Counter' },
+		{ id: snmp.ObjectType.Gauge, label: 'Gauge' },
+		{ id: snmp.ObjectType.TimeTicks, label: 'Time Ticks' },
+		{ id: snmp.ObjectType.Counter64, label: 'Counter 64' },
+		{ id: snmp.ObjectType.OctetString, label: 'Octet String' },
+		{ id: snmp.ObjectType.OID, label: 'OID' },
+		{ id: snmp.ObjectType.IpAddress, label: 'Ip Address' },
+		{ id: snmp.ObjectType.Opaque, label: 'Opaque' },
+		{ id: snmp.ObjectType.Null, label: 'Null' },
+	],
+	default: snmp.ObjectType.Integer,
+	isVisibleExpression: `$(options:trapType) == ${snmp.TrapType.EnterpriseSpecific}`,
+}
+
+export const ObjectValueOption = {
+	type: 'textinput',
+	id: 'objectValue',
+	label: 'VarBind Value',
+	default: '',
+	useVariables: { local: true },
+	isVisibleExpression: `$(options:trapType) == ${snmp.TrapType.EnterpriseSpecific} && $(options:objectType) != ${snmp.ObjectType.Null}`,
+}
+
+const enterpriseSpecific = `$(options:trapType) == ${snmp.TrapType.EnterpriseSpecific}`
+
+export const ObjectTypeHints = [
+	{
+		type: 'static-text',
+		id: 'hint_boolean',
+		label: 'Accepted values',
+		value: 'true/false, 1/0, yes/no, on/off',
+		isVisibleExpression: `${enterpriseSpecific} && $(options:objectType) == ${snmp.ObjectType.Boolean}`,
+	},
+	{
+		type: 'static-text',
+		id: 'hint_integer',
+		label: 'Accepted values',
+		value:
+			'Signed 32-bit integer in range [-2147483648, 2147483647]. Decimal (e.g. 42) or hex (e.g. 0x2A) format accepted.',
+		isVisibleExpression: `${enterpriseSpecific} && $(options:objectType) == ${snmp.ObjectType.Integer}`,
+	},
+	{
+		type: 'static-text',
+		id: 'hint_counter',
+		label: 'Accepted values',
+		value: 'Unsigned 32-bit integer in range [0, 4294967295]. Decimal (e.g. 42) or hex (e.g. 0x2A) format accepted.',
+		isVisibleExpression: `${enterpriseSpecific} && $(options:objectType) == ${snmp.ObjectType.Counter}`,
+	},
+	{
+		type: 'static-text',
+		id: 'hint_gauge',
+		label: 'Accepted values',
+		value: 'Unsigned 32-bit integer in range [0, 4294967295]. Decimal (e.g. 42) or hex (e.g. 0x2A) format accepted.',
+		isVisibleExpression: `${enterpriseSpecific} && $(options:objectType) == ${snmp.ObjectType.Gauge}`,
+	},
+	{
+		type: 'static-text',
+		id: 'hint_timeticks',
+		label: 'Accepted values',
+		value:
+			'Unsigned 32-bit integer in range [0, 4294967295], representing hundredths of a second. Decimal (e.g. 42) or hex (e.g. 0x2A) format accepted.',
+		isVisibleExpression: `${enterpriseSpecific} && $(options:objectType) == ${snmp.ObjectType.TimeTicks}`,
+	},
+	{
+		type: 'static-text',
+		id: 'hint_counter64',
+		label: 'Accepted values',
+		value:
+			'Unsigned 64-bit integer in range [0, 18446744073709551615]. Decimal (e.g. 42) or hex (e.g. 0x2A) format accepted.',
+		isVisibleExpression: `${enterpriseSpecific} && $(options:objectType) == ${snmp.ObjectType.Counter64}`,
+	},
+	{
+		type: 'static-text',
+		id: 'hint_octetstring',
+		label: 'Accepted values',
+		value: 'Any string.',
+		isVisibleExpression: `${enterpriseSpecific} && $(options:objectType) == ${snmp.ObjectType.OctetString}`,
+	},
+	{
+		type: 'static-text',
+		id: 'hint_oid',
+		label: 'Accepted values',
+		value:
+			'A valid OID in dotted numeric notation (e.g. 1.3.6.1.2.1.1.1.0). Leading dots will be trimmed automatically.',
+		isVisibleExpression: `${enterpriseSpecific} && $(options:objectType) == ${snmp.ObjectType.OID}`,
+	},
+	{
+		type: 'static-text',
+		id: 'hint_ipaddress',
+		label: 'Accepted values',
+		value: 'A valid IPv4 address in dotted decimal notation (e.g. 192.168.1.1).',
+		isVisibleExpression: `${enterpriseSpecific} && $(options:objectType) == ${snmp.ObjectType.IpAddress}`,
+	},
+	{
+		type: 'static-text',
+		id: 'hint_opaque',
+		label: 'Accepted values',
+		value: 'Buffer encoded as Base64 string. Will be padded as necessary',
+		isVisibleExpression: `${enterpriseSpecific} && $(options:objectType) == ${snmp.ObjectType.Opaque}`,
+	},
+]
+
 export default async function (self) {
 	const actionDefs = {}
 	actionDefs['setString'] = {
@@ -177,6 +336,7 @@ export default async function (self) {
 			return undefined
 		},
 	}
+
 	actionDefs['getOID'] = {
 		name: 'Get OID value',
 		options: [
@@ -207,6 +367,41 @@ export default async function (self) {
 		learn: async ({ options }, context) => {
 			await self.getOid(options.oid, options.variable, options.displaystring, context)
 			return undefined
+		},
+	}
+
+	actionDefs['trapOrInform'] = {
+		name: 'Send Trap or Inform message',
+		options: [
+			TrapOrInformOption,
+			TrapOrOidOption,
+			EnterpriseOidOption,
+			VarbindOidOption,
+			ObjectTypeOptions,
+			ObjectValueOption,
+			...ObjectTypeHints,
+		],
+		callback: async ({ options }, _context) => {
+			const { messageType, trapType, oidEnterprise, oidVarbind, objectType, objectValue } = options
+			if (trapType !== snmp.TrapType.EnterpriseSpecific) {
+				switch (messageType) {
+					case 'inform':
+						return await self.sendInform(trapType)
+					case 'trap':
+						return await self.sendTrap(trapType)
+				}
+			}
+			const VarBind = {
+				oid: oidVarbind,
+				type: objectType,
+				value: objectValue,
+			}
+			switch (messageType) {
+				case 'inform':
+					return await self.sendInform(oidEnterprise, [VarBind])
+				case 'trap':
+					return await self.sendTrap(oidEnterprise, [VarBind])
+			}
 		},
 	}
 

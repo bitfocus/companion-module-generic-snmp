@@ -1,4 +1,5 @@
 import { Regex } from '@companion-module/base'
+import { generateEngineId } from './oidUtils'
 
 export default function () {
 	const hasLegacyProviders = process.execArgv.includes('--openssl-legacy-provider')
@@ -28,6 +29,18 @@ export default function () {
 			max: 65535,
 			default: 161,
 			required: true,
+			description: 'Connection will make Get and Set requests to this port',
+		},
+		{
+			type: 'number',
+			id: 'trapPort',
+			label: 'Trap Port',
+			width: 6,
+			min: 162,
+			max: 65535,
+			default: 162,
+			required: true,
+			description: 'Connection will send traps and informs to this port',
 		},
 		{
 			type: 'dropdown',
@@ -62,8 +75,9 @@ export default function () {
 			id: 'engineID',
 			width: 6,
 			label: 'Engine ID',
-			default: '',
+			default: generateEngineId(),
 			isVisibleExpression: ` $(options:version) === 'v3'`,
+			regex: '/^[0-9a-fA-F]{10,64}$/',
 		},
 		{
 			type: 'textinput',
@@ -140,7 +154,7 @@ export default function () {
 			default: 162,
 			required: true,
 			isVisibleExpression: `$(options:traps)`,
-			description: 'Companion will bind to this port on 0.0.0.0 to listen for SNMP Traps',
+			description: 'Connection will bind to this port to listen for SNMP Traps & Informs',
 		},
 		{
 			type: 'number',
