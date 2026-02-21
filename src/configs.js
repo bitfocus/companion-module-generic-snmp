@@ -9,7 +9,6 @@ export default function () {
 		{ id: 'aes256r', label: '256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion' },
 	]
 	if (hasLegacyProviders) privProtocols.push({ id: 'des', label: 'DES encryption (CBC-DES)' })
-
 	return [
 		{
 			type: 'textinput',
@@ -75,7 +74,7 @@ export default function () {
 			id: 'engineID',
 			width: 6,
 			label: 'Engine ID',
-			default: generateEngineId(),
+			default: generateEngineId(63849),
 			isVisibleExpression: ` $(options:version) === 'v3'`,
 			regex: '/^[0-9a-fA-F]{10,64}$/',
 		},

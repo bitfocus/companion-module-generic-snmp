@@ -171,11 +171,11 @@ export const validateVarbinds = (varbinds) => {
  */
 export const generateEngineId = (enterpriseOid = 63849) => {
 	const enterpriseBytes = Buffer.alloc(4)
-	enterpriseBytes.writeUInt32BE(enterpriseOid | 0x80000000)
+	enterpriseBytes.writeUInt32BE((enterpriseOid | 0x80000000) >>> 0)
 
 	const formatByte = Buffer.from([0x05])
 
-	const randomBytesSeq = Buffer.from(randomBytes(new Uint8Array(8)))
+	const randomBytesSeq = Buffer.from(randomBytes(8))
 
 	return Buffer.concat([enterpriseBytes, formatByte, randomBytesSeq]).toString('hex')
 }
