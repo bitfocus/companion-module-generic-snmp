@@ -1,18 +1,15 @@
 import { Regex } from '@companion-module/base'
+import { generateEngineId } from './oidUtils.js'
 
-export function getConfigFields() {
+export default function () {
+	const hasLegacyProviders = process.execArgv.includes('--openssl-legacy-provider')
+	const privProtocols = [
+		{ id: 'aes', label: '128-bit AES encryption (CFB-AES-128)' },
+		{ id: 'aes256b', label: '256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localiztaion' },
+		{ id: 'aes256r', label: '256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion' },
+	]
+	if (hasLegacyProviders) privProtocols.push({ id: 'des', label: 'DES encryption (CBC-DES)' })
 	return [
-		{
-			type: 'static-text',
-			id: 'info',
-			width: 12,
-			label: 'Information',
-			value: `PLEASE READ THIS! Generic modules are only for use with custom applications.
-					If you use this module to control a device or software on the market that more than you are using,
-					PLEASE let us know about this software, so we can make a proper module for it.
-					If we already support this and you use this to trigger a feature our module doesn't support, 
-					please let us know. We want Companion to be as easy as possible to use for anyone.`,
-		},
 		{
 			type: 'textinput',
 			id: 'ip',
@@ -31,6 +28,18 @@ export function getConfigFields() {
 			max: 65535,
 			default: 161,
 			required: true,
+			description: 'Connection will make Get and Set requests to this port',
+		},
+		{
+			type: 'number',
+			id: 'trapPort',
+			label: 'Trap Port',
+			width: 6,
+			min: 162,
+			max: 65535,
+			default: 162,
+			required: true,
+			description: 'Connection will send traps and informs to this port',
 		},
 		{
 			type: 'dropdown',
@@ -43,7 +52,7 @@ export function getConfigFields() {
 				{ id: 'v3', label: 'SNMP v3' },
 			],
 			default: 'v1',
-			require: true,
+			required: true,
 		},
 		{
 			type: 'textinput',
@@ -57,7 +66,7 @@ export function getConfigFields() {
 			type: 'static-text',
 			id: 'infov3',
 			width: 12,
-			value: '<h5>SNMP v3 Configuration</h5>',
+			value: '<h6>SNMP v3 Configuration</h6>',
 			isVisibleExpression: ` $(options:version) === 'v3'`,
 		},
 		{
@@ -65,8 +74,9 @@ export function getConfigFields() {
 			id: 'engineID',
 			width: 6,
 			label: 'Engine ID',
-			default: '',
+			default: generateEngineId(63849),
 			isVisibleExpression: ` $(options:version) === 'v3'`,
+			regex: '/^[0-9a-fA-F]{10,64}$/',
 		},
 		{
 			type: 'textinput',
@@ -114,11 +124,7 @@ export function getConfigFields() {
 			id: 'privProtocol',
 			label: 'Priv Protocol',
 			width: 6,
-			choices: [
-				{ id: 'aes', label: '128-bit AES encryption (CFB-AES-128)' },
-				{ id: 'aes256b', label: '256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localiztaion' },
-				{ id: 'aes256r', label: '256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion' },
-			],
+			choices: privProtocols,
 			default: 'aes',
 			isVisibleExpression: ` $(options:version) === 'v3' && $(options:securityLevel) === 'authPriv' `,
 		},
@@ -129,6 +135,25 @@ export function getConfigFields() {
 			width: 6,
 			default: '',
 			isVisibleExpression: ` $(options:version) === 'v3' && $(options:securityLevel) === 'authPriv' `,
+		},
+		{
+			type: 'checkbox',
+			id: 'traps',
+			label: 'Listen for Traps',
+			default: false,
+			width: 6,
+		},
+		{
+			type: 'number',
+			id: 'portBind',
+			label: 'Listening Port',
+			width: 6,
+			min: 162,
+			max: 65535,
+			default: 162,
+			required: true,
+			isVisibleExpression: `$(options:traps)`,
+			description: 'Connection will bind to this port to listen for SNMP Traps & Informs',
 		},
 		{
 			type: 'number',

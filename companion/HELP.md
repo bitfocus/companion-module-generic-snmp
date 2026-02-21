@@ -9,7 +9,9 @@ To configure this module you will need:
 1. Agent Address - The IP Address of the SNMP enabled device you want to control
 2. UDP Port - The number of the UDP port on which the agent is listening (defaults to port 161)
 3. SNMP Version - The version of SNMP used by the agent. This will dictate how this module will authenticate with the agent
-4. Poll Interval - The poll interval for Get OID value actions with update enabled, and _all_ Get OID Value feedbacks.
+4. Listen for Traps - Enable to bind to a port for SNMP Traps
+5. Listening Port - Port to listen for traps on. The module will ignore messages from IPs other than the configured Agent Address.
+6. Poll Interval - The poll interval for Get OID value actions with update enabled, and _all_ Get OID Value feedbacks.
 
 ### SNMP versions v1/v2c
 
@@ -35,6 +37,7 @@ If you selected SNMP version `v3` you will also need to configure the following:
    - `AES` - for 128-bit AES encryption (CFB-AES-128)'
    - `AES256B` - for 256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localiztaion
    - `AES256R` - 256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion
+   - `DES` - for DES encryption (CBC-DES).
 7. `Priv Key` - Encryption Key (Available if Security Lavel is `authPriv`)
 
 ## Actions
@@ -44,6 +47,7 @@ You can perform the following actions with this module:
 - Get OID value, return to custom variable
   - Optional update based on connection poll
   - Optional convert returned OctetString to DisplayString
+- Send Trap or Inform message
 - Set OID value to an OctetString
 - Set OID value to a Number. This includes the following SNMP Object Types:
   - Integer
@@ -58,5 +62,9 @@ You can perform the following actions with this module:
 
 - Get OID value
   - Always updates based on connection poll
-  - Optional convert returned OctetString to DisplayString
+  - May also be updated via SNMP Trap
+  - Optional convert returned OctetString to DisplayString, traps always converted to DisplayString
   - As a value feedback, it can be accessed in the `Local Variables` tab
+- OID Trap value
+  - Does not poll for updates
+  - Traps always converted to DisplayString

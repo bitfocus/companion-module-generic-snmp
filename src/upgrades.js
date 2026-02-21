@@ -52,7 +52,7 @@ export default [
 		}
 		for (const action of props.actions) {
 			if (action.actionId === 'getOID') {
-				action.displaystring ??= false
+				action.options.displaystring ??= false
 				result.updatedActions.push(action)
 			}
 		}
@@ -91,6 +91,28 @@ export default [
 			delete config.privKey
 		}
 		result.updatedConfig = config
+		return result
+	},
+
+	function v240(_context, props) {
+		const result = {
+			updatedActions: [],
+			updatedConfig: null,
+			updatedSecrets: null,
+			updatedFeedbacks: [],
+		}
+		const config = props.config
+		config.traps ??= false
+		config.portBind ??= 162
+		config.trapPort ??= 162
+
+		result.updatedConfig = config
+		for (const feedback of props.feedbacks) {
+			if (feedback.feedbackId === 'getOID') {
+				feedback.options.div ??= 1
+				result.updatedFeedbacks.push(feedback)
+			}
+		}
 		return result
 	},
 ]
