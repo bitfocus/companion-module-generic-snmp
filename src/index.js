@@ -436,31 +436,34 @@ export class Generic_SNMP extends InstanceBase {
 	 */
 
 	async sendInform(typeOrOid, varbinds = []) {
-		return await this.snmpQueue.add(async () => {
-			return new Promise((resolve, reject) => {
-				if (typeof typeOrOid === 'string') {
-					typeOrOid = trimOid(typeOrOid)
-					if (!isValidSnmpOid(typeOrOid)) {
-						reject(new Error(`Invalid Enterprise OID: ${typeOrOid}`))
-						return
+		return await this.snmpQueue.add(
+			async () => {
+				return new Promise((resolve, reject) => {
+					if (typeof typeOrOid === 'string') {
+						typeOrOid = trimOid(typeOrOid)
+						if (!isValidSnmpOid(typeOrOid)) {
+							reject(new Error(`Invalid Enterprise OID: ${typeOrOid}`))
+							return
+						}
 					}
-				}
 
-				const validatedVarBinds = validateVarbinds(varbinds)
+					const validatedVarBinds = validateVarbinds(varbinds)
 
-				this.session.inform(typeOrOid, validatedVarBinds, (error) => {
-					if (error) {
-						reject(error)
-						return
-					}
-					this.log(
-						'info',
-						`Inform sent: ${typeof typeOrOid === 'number' ? snmp.TrapType[typeOrOid] : typeOrOid}${validatedVarBinds.length > 0 ? `\n${JSON.stringify(validatedVarBinds)}` : ''}`,
-					)
-					resolve()
+					this.session.inform(typeOrOid, validatedVarBinds, (error) => {
+						if (error) {
+							reject(error)
+							return
+						}
+						this.log(
+							'info',
+							`Inform sent: ${typeof typeOrOid === 'number' ? snmp.TrapType[typeOrOid] : typeOrOid}${validatedVarBinds.length > 0 ? `\n${JSON.stringify(validatedVarBinds)}` : ''}`,
+						)
+						resolve()
+					})
 				})
-			})
-		})
+			},
+			{ priority: 2 },
+		)
 	}
 	/**
 	 * Sends an SNMP TRAP notification.
@@ -472,31 +475,34 @@ export class Generic_SNMP extends InstanceBase {
 	 * @returns {Promise<void>} Resolves when the trap is sent, or rejects on error.
 	 */
 	async sendTrap(typeOrOid, varbinds = []) {
-		return await this.snmpQueue.add(async () => {
-			return new Promise((resolve, reject) => {
-				if (typeof typeOrOid === 'string') {
-					typeOrOid = trimOid(typeOrOid)
-					if (!isValidSnmpOid(typeOrOid)) {
-						reject(new Error(`Invalid Enterprise OID: ${typeOrOid}`))
-						return
+		return await this.snmpQueue.add(
+			async () => {
+				return new Promise((resolve, reject) => {
+					if (typeof typeOrOid === 'string') {
+						typeOrOid = trimOid(typeOrOid)
+						if (!isValidSnmpOid(typeOrOid)) {
+							reject(new Error(`Invalid Enterprise OID: ${typeOrOid}`))
+							return
+						}
 					}
-				}
 
-				const validatedVarBinds = validateVarbinds(varbinds)
+					const validatedVarBinds = validateVarbinds(varbinds)
 
-				this.session.trap(typeOrOid, validatedVarBinds, this.agentAddress, (error) => {
-					if (error) {
-						reject(error)
-						return
-					}
-					this.log(
-						'info',
-						`Trap sent: ${typeof typeOrOid === 'number' ? snmp.TrapType[typeOrOid] : typeOrOid}${validatedVarBinds.length > 0 ? `\n${JSON.stringify(validatedVarBinds)}` : ''}`,
-					)
-					resolve()
+					this.session.trap(typeOrOid, validatedVarBinds, this.agentAddress, (error) => {
+						if (error) {
+							reject(error)
+							return
+						}
+						this.log(
+							'info',
+							`Trap sent: ${typeof typeOrOid === 'number' ? snmp.TrapType[typeOrOid] : typeOrOid}${validatedVarBinds.length > 0 ? `\n${JSON.stringify(validatedVarBinds)}` : ''}`,
+						)
+						resolve()
+					})
 				})
-			})
-		})
+			},
+			{ priority: 2 },
+		)
 	}
 
 	throttledFeedbackIdCheck = throttle(
