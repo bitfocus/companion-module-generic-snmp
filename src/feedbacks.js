@@ -11,6 +11,12 @@ const DivisorOption = {
 		'If OID returns a number, value will be divided by this value. Ie use `100` to achieve 2 decimal precision. Does not work with Counter64 type VarBinds.',
 }
 
+/** @typedef {InstanceType<typeof import('./index.js').Generic_SNMP>} Generic_SNMP */
+
+/**
+ * @param {Generic_SNMP} self
+ */
+
 export default async function (self) {
 	const feedbackDefs = {}
 	feedbackDefs['getOID'] = {

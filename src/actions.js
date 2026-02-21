@@ -188,6 +188,12 @@ export const ObjectTypeHints = [
 	},
 ]
 
+/** @typedef {InstanceType<typeof import('./index.js').Generic_SNMP>} Generic_SNMP */
+
+/**
+ * @param {Generic_SNMP} self
+ */
+
 export default async function (self) {
 	const actionDefs = {}
 	actionDefs['setString'] = {

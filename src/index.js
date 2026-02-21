@@ -23,7 +23,7 @@ import os from 'os'
  * @typedef {number | string | Buffer | null | Array<number> | boolean} SNMPValue
  */
 
-class Generic_SNMP extends InstanceBase {
+export class Generic_SNMP extends InstanceBase {
 	constructor(internal) {
 		super(internal)
 		/** @type {Map<string, SNMPValue>} Map of OIDs with their values */
