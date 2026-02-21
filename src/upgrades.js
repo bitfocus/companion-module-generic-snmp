@@ -52,7 +52,7 @@ export default [
 		}
 		for (const action of props.actions) {
 			if (action.actionId === 'getOID') {
-				action.displaystring ??= false
+				action.options.displaystring ??= false
 				result.updatedActions.push(action)
 			}
 		}
@@ -107,6 +107,12 @@ export default [
 		config.trapPort ??= 162
 
 		result.updatedConfig = config
+		for (const feedback of props.feedbacks) {
+			if (feedback.feedbackId === 'getOID') {
+				feedback.options.div ??= 1
+				result.updatedFeedbacks.push(feedback)
+			}
+		}
 		return result
 	},
 ]
