@@ -1,5 +1,5 @@
 import { Regex } from '@companion-module/base'
-import { generateEngineId } from './oidUtils'
+import { generateEngineId } from './oidUtils.js'
 
 export default function () {
 	const hasLegacyProviders = process.execArgv.includes('--openssl-legacy-provider')
