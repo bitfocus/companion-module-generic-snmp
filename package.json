@@ -17,7 +17,8 @@
   },
   "devDependencies": {
     "@companion-module/tools": "^2.6.1",
-    "eslint": "^9.39.2",
+    "@types/net-snmp": "^3.23.0",
+    "eslint": "^9.39.3",
     "prettier": "^3.8.1"
   },
   "engines": {
