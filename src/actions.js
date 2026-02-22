@@ -265,6 +265,7 @@ export default async function (self) {
 				id: 'value',
 				default: 'true',
 				useVariables: { local: true },
+				regex: '/^(?:true|false|yes|no|on|off|1|0|\\$\\([a-zA-Z0-9\\-_.]+:[a-zA-Z0-9\\-_.]+\\))$/i',
 			},
 		],
 		callback: async ({ options }, _context) => {
@@ -308,7 +309,14 @@ export default async function (self) {
 
 	actionDefs['setIpAddress'] = {
 		name: 'Set OID value to an IP Address',
-		options: [OidOption, ValueOption],
+		options: [
+			OidOption,
+			{
+				...ValueOption,
+				regex:
+					'/^(?:\\$\\([a-zA-Z0-9_.\\-]+:[a-zA-Z0-9_.\\-]+\\)|(?:(?:\\d{1,3}|\\$\\([a-zA-Z0-9_.\\-]+:[a-zA-Z0-9_.\\-]+\\))\\.){3}(?:\\d{1,3}|\\$\\([a-zA-Z0-9_.\\-]+:[a-zA-Z0-9_.\\-]+\\)))$/',
+			},
+		],
 		callback: async ({ options }, _context) => {
 			const oid = options.oid
 			const value = options.value
@@ -328,7 +336,14 @@ export default async function (self) {
 
 	actionDefs['setOID'] = {
 		name: 'Set OID value to an OID',
-		options: [OidOption, ValueOption],
+		options: [
+			OidOption,
+			{
+				...ValueOption,
+				regex:
+					'/^(?:\\$\\([a-zA-Z0-9\\-_.]+:[a-zA-Z0-9\\-_.]+\\)|(?:\\d+|\\$\\([a-zA-Z0-9\\-_.]+:[a-zA-Z0-9\\-_.]+\\))(?:\\.(?:\\d+|\\$\\([a-zA-Z0-9\\-_.]+:[a-zA-Z0-9\\-_.]+\\)))*)$/',
+			},
+		],
 		callback: async ({ options }, _context) => {
 			const oid = options.oid
 			const value = options.value
