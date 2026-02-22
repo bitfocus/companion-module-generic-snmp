@@ -1,13 +1,16 @@
 import { Regex } from '@companion-module/base'
 import snmp from 'net-snmp'
 
+export const OidRegex =
+	'/^(?:\\d+|\\$\\([a-zA-Z0-9\\-_.]+:[a-zA-Z0-9\\-_.]+\\))(?:\\.(?:\\d+|\\$\\([a-zA-Z0-9\\-_.]+:[a-zA-Z0-9\\-_.]+\\)))*$/'
+
 export const OidOption = {
 	type: 'textinput',
 	label: 'OID',
 	id: 'oid',
 	default: '',
 	required: true,
-	regex: Regex.SOMETHING,
+	regex: OidRegex,
 	useVariables: { local: true },
 }
 
@@ -62,7 +65,7 @@ export const EnterpriseOidOption = {
 	id: 'oidEnterprise',
 	default: '1.3.6.1.4.1.63849.1',
 	required: true,
-	regex: Regex.SOMETHING,
+	regex: OidRegex,
 	useVariables: { local: true },
 	isVisibleExpression: `$(options:trapType) == ${snmp.TrapType.EnterpriseSpecific}`,
 	description: 'Enterprise, Inform or Trap OID depending on configuration',
@@ -74,7 +77,7 @@ export const VarbindOidOption = {
 	id: 'oidVarbind',
 	default: '1.3.6.1.4.1.63849.1',
 	required: true,
-	regex: Regex.SOMETHING,
+	regex: OidRegex,
 	useVariables: { local: true },
 	isVisibleExpression: `$(options:trapType) == ${snmp.TrapType.EnterpriseSpecific}`,
 }
@@ -240,8 +243,8 @@ export default async function (self) {
 
 			await self.setOid(oid, options.type, intValue)
 		},
-		learn: async ({ options }, context) => {
-			await self.getOid(options.oid, '', options.displaystring, context)
+		learn: async ({ options }, _context) => {
+			await self.getOid(options.oid)
 			if (self.oidValues.has(options.oid)) {
 				return {
 					...options,
@@ -291,8 +294,8 @@ export default async function (self) {
 
 			await self.setOid(oid, snmp.ObjectType.Boolean, booleanValue)
 		},
-		learn: async ({ options }, context) => {
-			await self.getOid(options.oid, '', options.displaystring, context)
+		learn: async ({ options }, _context) => {
+			await self.getOid(options.oid)
 			if (self.oidValues.has(options.oid)) {
 				return {
 					...options,
@@ -311,8 +314,8 @@ export default async function (self) {
 			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.IpAddress, value)
 		},
-		learn: async ({ options }, context) => {
-			await self.getOid(options.oid, '', options.displaystring, context)
+		learn: async ({ options }, _context) => {
+			await self.getOid(options.oid)
 			if (self.oidValues.has(options.oid)) {
 				return {
 					...options,
@@ -331,8 +334,8 @@ export default async function (self) {
 			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.oid, value)
 		},
-		learn: async ({ options }, context) => {
-			await self.getOid(options.oid, '', options.displaystring, context)
+		learn: async ({ options }, _context) => {
+			await self.getOid(options.oid)
 			if (self.oidValues.has(options.oid)) {
 				return {
 					...options,
@@ -363,15 +366,18 @@ export default async function (self) {
 			DisplayStringOption,
 		],
 		callback: async ({ options }, context) => {
-			await self.getOid(options.oid, options.variable, options.displaystring, context)
+			await self.getOid(options.oid)
+			const value = self.oidValues.get(options.oid)
+			context.setCustomVariableValue(options.variable, value)
 		},
-		subscribe: async ({ options }, context) => {
+		subscribe: async ({ options }, _context) => {
 			if (options.update) {
-				await self.getOid(options.oid, options.variable, options.displaystring, context)
+				self.pendingOids.add(options.oid)
+				self.throttledBatchGet()
 			}
 		},
-		learn: async ({ options }, context) => {
-			await self.getOid(options.oid, options.variable, options.displaystring, context)
+		learn: async ({ options }, _context) => {
+			await self.getOid(options.oid)
 			return undefined
 		},
 	}

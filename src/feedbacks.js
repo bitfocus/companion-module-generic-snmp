@@ -1,4 +1,4 @@
-import { OidOption, DisplayStringOption } from './actions.js'
+import { OidOption } from './actions.js'
 
 const DivisorOption = {
 	type: 'number',
@@ -22,25 +22,55 @@ export default async function (self) {
 	feedbackDefs['getOID'] = {
 		name: 'OID value',
 		type: 'value',
-		options: [OidOption, DisplayStringOption, DivisorOption],
+		options: [OidOption, DivisorOption],
 		callback: async (feedback, _context) => {
 			self.oidTracker.updateFeedback(feedback.id, feedback.options.oid)
 			if (!self.oidValues.has(feedback.options.oid)) {
 				self.log('info', `Feedback OID not cached yet for ${feedback.id}, retrieving: ${feedback.options.oid}`)
-				await self.getOid(feedback.options.oid, '', feedback.options.displaystring, null)
+				await self.getOid(feedback.options.oid)
 			}
 			const value = self.oidValues.get(feedback.options.oid) ?? null
 			if (typeof value == 'number') return value / feedback.options.div
 			return value
 		},
-		subscribe: async (feedback, context) => {
+		subscribe: async (feedback, _context) => {
 			self.oidTracker.addFeedback(feedback.id, feedback.options.oid)
-			await self.getOid(feedback.options.oid, '', feedback.options.displaystring, context)
+			self.pendingOids.add(feedback.options.oid)
+			self.throttledBatchGet()
 		},
-		learn: async (feedback, context) => {
+		learn: async (feedback, _context) => {
 			self.oidTracker.updateFeedback(feedback.id, feedback.options.oid)
-			await self.getOid(feedback.options.oid, '', feedback.options.displaystring, context)
+			await self.getOid(feedback.options.oid)
 			return undefined
+		},
+		unsubscrbe: (feedback) => {
+			self.oidTracker.removeFeedback(feedback.id)
+		},
+	}
+
+	feedbackDefs['getOIDKnown'] = {
+		name: 'OID value (known OIDs)',
+		type: 'value',
+		options: [
+			{
+				type: 'dropdown',
+				id: 'oid',
+				label: 'OID',
+				choices: self.getOidChoices(),
+				default: self.getOidChoices()[0]?.id ?? '',
+			},
+			DivisorOption,
+		],
+		callback: async (feedback, _context) => {
+			self.oidTracker.updateFeedback(feedback.id, feedback.options.oid)
+			const value = self.oidValues.get(feedback.options.oid) ?? null
+			if (typeof value == 'number') return value / feedback.options.div
+			return value
+		},
+		subscribe: async (feedback, _context) => {
+			self.oidTracker.addFeedback(feedback.id, feedback.options.oid)
+			self.pendingOids.add(feedback.options.oid)
+			self.throttledBatchGet()
 		},
 		unsubscrbe: (feedback) => {
 			self.oidTracker.removeFeedback(feedback.id)

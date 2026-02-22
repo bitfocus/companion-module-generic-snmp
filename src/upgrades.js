@@ -105,6 +105,7 @@ export default [
 		config.traps ??= false
 		config.portBind ??= 162
 		config.trapPort ??= 162
+		config.walk ??= ''
 
 		result.updatedConfig = config
 		for (const feedback of props.feedbacks) {

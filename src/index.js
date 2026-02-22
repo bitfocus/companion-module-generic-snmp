@@ -8,7 +8,7 @@ import UpgradeScripts from './upgrades.js'
 import { SharedUDPSocketWrapper } from './wrapper.js'
 import { FeedbackOidTracker } from './oidtracker.js'
 import { trimOid, isValidSnmpOid, bufferToBigInt, validateVarbinds } from './oidUtils.js'
-import { throttle } from 'es-toolkit'
+import { throttle, debounce } from 'es-toolkit'
 import dns from 'dns'
 import os from 'os'
 
@@ -30,6 +30,8 @@ export class Generic_SNMP extends InstanceBase {
 		this.oidValues = new Map()
 		/** @type {Set<string>} Set of Feedback IDs to be checked after throttle interval */
 		this.feedbackIdsToCheck = new Set()
+		/** @type {Set<string>} Set of OIDs to be polled */
+		this.pendingOids = new Set()
 		this.session = null
 		/** @type {FeedbackOidTracker} */
 		this.oidTracker = new FeedbackOidTracker()
@@ -61,6 +63,20 @@ export class Generic_SNMP extends InstanceBase {
 		await this.setAgentAddress()
 	}
 
+	async destroy() {
+		this.log('debug', `destroy ${this.id}:${this.label}`)
+		this.snmpQueue.clear()
+		this.throttledFeedbackIdCheck.cancel()
+		this.throttledBatchGet.cancel()
+		this.debouncedUpdateDefinitions.cancel()
+		if (this.pollTimer) {
+			clearTimeout(this.pollTimer)
+			delete this.pollTimer
+		}
+		this.disconnectAgent()
+		this.closeListener()
+	}
+
 	async setAgentAddress() {
 		return new Promise((resolve) => {
 			dns.lookup(os.hostname(), (err, addr) => {
@@ -84,6 +100,13 @@ export class Generic_SNMP extends InstanceBase {
 				await this.createListener()
 			} catch (err) {
 				this.log('error', `Could not initialize SNMP Trap listener: ${err.message}`)
+			}
+		}
+		if (this.config.walk) {
+			try {
+				await this.walk(this.config.walk)
+			} catch (err) {
+				this.log('warn', `Walk failed - ${err instanceof Error ? err.message : err.toString()}`)
 			}
 		}
 
@@ -307,32 +330,58 @@ export class Generic_SNMP extends InstanceBase {
 			if (this.config.verbose) this.log('debug', JSON.stringify(trap))
 			if (Array.isArray(trap.pdu.varbinds)) {
 				trap.pdu.varbinds.forEach((varbind, index) => {
-					if (snmp.isVarbindError(varbind)) {
-						this.log('warn', `Varbind [${index}] error: ${snmp.varbindError(varbind)}`)
-						return
-					}
-					if ('type' in varbind && 'value' in varbind) {
-						let value = varbind.value
-						if (varbind.type == snmp.ObjectType.Counter64) {
-							value = bufferToBigInt(varbind.value).toString()
-						} else if (varbind.type == snmp.ObjectType.OctetString) {
-							value = varbind.value.toString()
-						} else if (varbind.type == snmp.ObjectType.Opaque) {
-							value = varbind.value.toString('base64')
-						}
-						this.log(
-							'info',
-							`VarBind [${index}] OID: ${varbind.oid} type: ${snmp.ObjectType[varbind.type]} value: ${value}`,
-						)
-						this.oidValues.set(varbind.oid, value)
-						this.oidTracker.getFeedbackIdsForOid(varbind.oid).forEach((id) => this.feedbackIdsToCheck.add(id))
-					}
+					this.handleVarbind(varbind, index)
 				})
-				if (this.feedbackIdsToCheck.size > 0) this.throttledFeedbackIdCheck()
 			}
 		} catch (error) {
 			this.log('error', `processTrap error: ${error.message}`)
 		}
+	}
+
+	/**
+	 * Processes a single SNMP varbind, converting its value to the appropriate type
+	 * and storing it in the OID value cache. Triggers feedback checks for any
+	 * feedbacks watching the varbind's OID.
+	 *
+	 * Counter64 values are converted to a decimal string, OctetString values are
+	 * converted to a UTF-8 string, and Opaque values are converted to a base64 string.
+	 * Varbind errors are logged as warnings and skipped.
+	 *
+	 * @param {SnmpVarbind} varbind - The varbind to process
+	 * @param {number} index - The index of the varbind in its parent array, used for logging
+	 * @returns {void}
+	 */
+
+	handleVarbind(varbind, index) {
+		if (snmp.isVarbindError(varbind)) {
+			this.log('warn', snmp.varbindError(varbind))
+			return
+		}
+		let value = varbind.value
+		if (varbind.type == snmp.ObjectType.Counter64) {
+			value = bufferToBigInt(varbind.value).toString()
+		} else if (varbind.type == snmp.ObjectType.OctetString) {
+			value = varbind.value.toString()
+		} else if (varbind.type == snmp.ObjectType.Opaque) {
+			value = varbind.value.toString('base64')
+		} else if (
+			varbind.type == snmp.ObjectType.NoSuchObject ||
+			varbind.type == snmp.ObjectType.EndOfMibView ||
+			varbind.type == snmp.ObjectType.NoSuchInstance
+		) {
+			// We don't want to cache these value types
+			this.log(
+				'debug',
+				`VarBind [${index}] OID: ${varbind.oid} type: ${snmp.ObjectType[varbind.type]}\nNot caching varbind`,
+			)
+			return
+		}
+		this.log('info', `VarBind [${index}] OID: ${varbind.oid} type: ${snmp.ObjectType[varbind.type]} value: ${value}`)
+		const isNew = !this.oidValues.has(varbind.oid)
+		this.oidValues.set(varbind.oid, value)
+		if (isNew) this.debouncedUpdateDefinitions()
+		this.oidTracker.getFeedbackIdsForOid(varbind.oid).forEach((id) => this.feedbackIdsToCheck.add(id))
+		if (this.feedbackIdsToCheck.size > 0) this.throttledFeedbackIdCheck()
 	}
 
 	/**
@@ -370,45 +419,66 @@ export class Generic_SNMP extends InstanceBase {
 	/**
 	 * Get an SNMP OID value from the target device
 	 *
-	 * @param {string} oid - The SNMP OID to get
-	 * @param {string} customVariable - Optional custom variable name to update with the value
-	 * @param {boolean} displaystring - If true, convert value to string; if false, use raw value
-	 * @param {import('@companion-module/base').CompanionActionContext | null} context - Companion context for setting custom variables (or null)
-	 * @returns {Promise<SNMPValue>}
+	 * @param {string | string[]} oids - The SNMP OID or array of OIDs to get
+	 * @returns {Promise<void>}
 	 * @throws {Error} If the OID is invalid or the SNMP get operation fails
 	 */
 
-	async getOid(oid, customVariable, displaystring, context) {
+	async getOid(oids) {
+		oids = (Array.isArray(oids) ? oids : [oids]).reduce((acc, oid) => {
+			oid = trimOid(oid)
+			if (!isValidSnmpOid(oid) || oid.length == 0) {
+				this.log('warn', `Invalid OID skipped: ${oid}`)
+				return acc
+			}
+			acc.push(oid)
+			return acc
+		}, [])
+
+		if (oids.length === 0) return
+		return await this.snmpQueue.add(
+			() => {
+				return new Promise((resolve, reject) => {
+					this.session.get(oids, (error, varbinds) => {
+						if (error) {
+							reject(error)
+						}
+						varbinds.forEach((varbind, index) => {
+							this.handleVarbind(varbind, index)
+						})
+						resolve()
+					})
+				})
+			},
+			{ priority: 0 },
+		)
+	}
+
+	/**
+	 * Walk the MIB tree from specified OID
+	 *
+	 * @param {string} oid - The SNMP OID to walk from
+	 * @returns {Promise<void>}
+	 * @throws {Error} If the OID is invalid or the SNMP walk operation fails
+	 */
+
+	async walk(oid) {
 		oid = trimOid(oid)
 		if (!isValidSnmpOid(oid) || oid.length == 0) {
-			throw new Error(`Invalid OID: ${oid}`)
+			this.log('warn', `Invalid OID: ${oid}, walk cancelled`)
+			return
 		}
 		return await this.snmpQueue.add(
 			() => {
 				return new Promise((resolve, reject) => {
-					this.session.get(
-						[oid],
-						((error, varbinds) => {
-							if (error) {
-								reject(error)
-							}
-							if (snmp.isVarbindError(varbinds[0])) {
-								reject(`Get OID: ${oid} Varbind error: ${snmp.varbindError(varbinds[0])}`)
-							}
-							/** @type {SNMPValue} */
-							let value
-							if (varbinds[0].type == snmp.ObjectType.Counter64) {
-								value = bufferToBigInt(varbinds[0].value).toString()
-							} else value = displaystring ? varbinds[0].value.toString() : varbinds[0].value
-							if (this.config.verbose)
-								this.log('debug', `OID: ${varbinds[0].oid} type: ${snmp.ObjectType[varbinds[0].type]} value: ${value}`)
-							this.oidValues.set(varbinds[0].oid, value)
-							if (customVariable && context !== null) context.setCustomVariableValue(customVariable, value)
-							this.oidTracker.getFeedbackIdsForOid(varbinds[0].oid).forEach((id) => this.feedbackIdsToCheck.add(id))
-							if (this.feedbackIdsToCheck.size > 0) this.throttledFeedbackIdCheck()
-							resolve(value)
-						}).bind(this),
-					)
+					const feedCb = (varbinds) => {
+						varbinds.forEach((varbind, index) => this.handleVarbind(varbind, index))
+					}
+					const doneCb = (error) => {
+						if (error) reject(error)
+						else resolve()
+					}
+					this.session.walk(oid, feedCb, doneCb)
 				})
 			},
 			{ priority: 0 },
@@ -417,7 +487,7 @@ export class Generic_SNMP extends InstanceBase {
 
 	pollOids() {
 		this.subscribeActions('getOID')
-		this.subscribeFeedbacks('getOID')
+		this.subscribeFeedbacks('getOID', 'getOIDKnown')
 		if (this.config.interval > 0) {
 			this.pollTimer = setTimeout(() => {
 				this.pollOids()
@@ -501,8 +571,18 @@ export class Generic_SNMP extends InstanceBase {
 					})
 				})
 			},
-			{ priority: 2 },
+			{ priority: 3 },
 		)
+	}
+
+	/**
+	 * Returns a list of dropdown choices from the cached OID values map,
+	 * one entry per OID key.
+	 *
+	 * @returns {import('@companion-module/base').DropdownChoice[]}
+	 */
+	getOidChoices() {
+		return Array.from(this.oidValues.keys()).map((oid) => ({ id: oid, label: oid }))
 	}
 
 	throttledFeedbackIdCheck = throttle(
@@ -516,17 +596,25 @@ export class Generic_SNMP extends InstanceBase {
 		{ edges: ['trailing'] },
 	)
 
-	async destroy() {
-		this.log('debug', `destroy ${this.id}:${this.label}`)
-		this.snmpQueue.clear()
-		this.throttledFeedbackIdCheck.cancel()
-		if (this.pollTimer) {
-			clearTimeout(this.pollTimer)
-			delete this.pollTimer
-		}
-		this.disconnectAgent()
-		this.closeListener()
-	}
+	/**
+	 * Throttled function that batches all OIDs accumulated in {@link pendingOids}
+	 * into a single {@link getOid} call. Automatically deduplicates OIDs via the
+	 * underlying Set, ensuring each OID is only fetched once per batch regardless
+	 * of how many actions or feedbacks are subscribed to it.
+	 *
+	 * Should be triggered by subscribe callbacks rather than called directly.
+	 * The throttle window allows all subscribe callbacks to fire and add their
+	 * OIDs before the batch request is dispatched.
+	 *
+	 * @type {import('es-toolkit').ThrottledFunction<() => void>}
+	 */
+
+	throttledBatchGet = throttle(() => {
+		if (this.pendingOids.size === 0) return
+		const oids = Array.from(this.pendingOids)
+		this.pendingOids.clear()
+		this.getOid(oids)
+	}, 20)
 
 	updateActions() {
 		UpdateActions(this)
@@ -535,6 +623,17 @@ export class Generic_SNMP extends InstanceBase {
 	updateFeedbacks() {
 		UpdateFeedbacks(this)
 	}
+
+	/**
+	 * Debounced function that updates action and feedback definitions.
+	 *
+	 * @type {import('es-toolkit').DebouncedFunction<() => void>}
+	 */
+
+	debouncedUpdateDefinitions = debounce(() => {
+		//this.updateActions()
+		this.updateFeedbacks()
+	}, 1000)
 }
 
 runEntrypoint(Generic_SNMP, UpgradeScripts)

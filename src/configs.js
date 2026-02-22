@@ -63,6 +63,15 @@ export default function () {
 			isVisibleExpression: ` $(options:version) === 'v1' || $(options:version) === 'v2c'`,
 		},
 		{
+			type: 'textinput',
+			id: 'walk',
+			width: 6,
+			label: 'Walk OID',
+			default: '',
+			description: 'On initialization, walk the MIB starting at this OID',
+			regex: '/^(0|1|2)(.(0|[1-9]d*))+$/',
+		},
+		{
 			type: 'static-text',
 			id: 'infov3',
 			width: 12,

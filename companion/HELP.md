@@ -12,6 +12,7 @@ To configure this module you will need:
 4. Listen for Traps - Enable to bind to a port for SNMP Traps
 5. Listening Port - Port to listen for traps on. The module will ignore messages from IPs other than the configured Agent Address.
 6. Poll Interval - The poll interval for Get OID value actions with update enabled, and _all_ Get OID Value feedbacks.
+7. Walk OID - If populated, the agent will walk the MIB starting at this OID
 
 ### SNMP versions v1/v2c
 
@@ -46,7 +47,7 @@ You can perform the following actions with this module:
 
 - Get OID value, return to custom variable
   - Optional update based on connection poll
-  - Optional convert returned OctetString to DisplayString
+  - As of v2.4.0 OctetString always converted to DisplayString
 - Send Trap or Inform message
 - Set OID value to an OctetString
 - Set OID value to a Number. This includes the following SNMP Object Types:
@@ -60,11 +61,13 @@ You can perform the following actions with this module:
 
 ## Feedbacks
 
-- Get OID value
+- OID value
+- OID value (known OIDs)
   - Always updates based on connection poll
   - May also be updated via SNMP Trap
-  - Optional convert returned OctetString to DisplayString, traps always converted to DisplayString
+  - As of v2.4.0 OctetString always converted to DisplayString
+  - Numeric values may be divied by the `Scaling Divisor` field to achieved fixed precision decimal values
   - As a value feedback, it can be accessed in the `Local Variables` tab
+  - Known OIDs feedback presents a dropdown of already cached VarBind OIDs
 - OID Trap value
-  - Does not poll for updates
-  - Traps always converted to DisplayString
+  - As above but does not poll for updates
