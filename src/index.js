@@ -59,6 +59,10 @@ export class Generic_SNMP extends InstanceBase {
 
 		this.config = config
 		this.secrets = secrets
+
+		this.updateActions()
+		this.updateFeedbacks()
+
 		await this.initializeConnection()
 		await this.setAgentAddress()
 	}

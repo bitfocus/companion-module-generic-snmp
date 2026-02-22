@@ -453,6 +453,13 @@ export default async function (self) {
 		name: 'Send Trap or Inform message',
 		options: [
 			TrapOrInformOption,
+			{
+				type: 'static-text',
+				id: 'hint_inform_v1',
+				label: 'Warning',
+				value: 'Inform not allowed for SNMP `v1`. Please select `Trap` message type or change to SNMP `v2c` or `v3`.',
+				isVisibleExpression: `$(options:messageType) == 'inform' && ${self.config.version == 'v1'}`,
+			},
 			TrapOrOidOption,
 			EnterpriseOidOption,
 			VarbindOidOption,
