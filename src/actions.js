@@ -53,11 +53,63 @@ export const TrapOrOidOption = {
 		{ id: snmp.TrapType.LinkDown, label: 'Link Down' },
 		{ id: snmp.TrapType.LinkUp, label: 'Link Up' },
 		{ id: snmp.TrapType.AuthenticationFailure, label: 'Authentication Failure' },
-		{ id: snmp.TrapType.EgpNeighborLoss, label: 'Egp Neighbor Loss' },
-		{ id: snmp.TrapType.EnterpriseSpecific, label: 'OID' },
+		{ id: snmp.TrapType.EgpNeighborLoss, label: 'EGP Neighbor Loss' },
+		{ id: snmp.TrapType.EnterpriseSpecific, label: 'Enterprise-specific Trap' },
 	],
 	default: snmp.TrapType.EnterpriseSpecific,
 }
+const trapTypeVisible = (trapType) => `$(options:trapType) == ${trapType}`
+
+export const TrapTypeHints = [
+	{
+		type: 'static-text',
+		id: 'hint_coldstart',
+		label: 'Cold Start',
+		value:
+			"Signifies that the sending protocol entity is reinitializing itself such that the agent's configuration or the protocol entity implementation may be altered.",
+		isVisibleExpression: trapTypeVisible(snmp.TrapType.ColdStart),
+	},
+	{
+		type: 'static-text',
+		id: 'hint_warmstart',
+		label: 'Warm Start',
+		value:
+			'Signifies that the sending protocol entity is reinitializing itself such that neither the agent configuration nor the protocol entity implementation is altered.',
+		isVisibleExpression: trapTypeVisible(snmp.TrapType.WarmStart),
+	},
+	{
+		type: 'static-text',
+		id: 'hint_linkdown',
+		label: 'Link Down',
+		value:
+			"Signifies that the sending protocol entity recognizes a failure in one of the communication links represented in the agent's configuration. Should include <code>ifIndex</code> in varbinds.",
+		isVisibleExpression: trapTypeVisible(snmp.TrapType.LinkDown),
+	},
+	{
+		type: 'static-text',
+		id: 'hint_linkup',
+		label: 'Link Up',
+		value:
+			"Signifies that the sending protocol entity recognizes that one of the communication links represented in the agent's configuration has come up. Should include <code>ifIndex</code> in varbinds.",
+		isVisibleExpression: trapTypeVisible(snmp.TrapType.LinkUp),
+	},
+	{
+		type: 'static-text',
+		id: 'hint_authfailure',
+		label: 'Authentication Failure',
+		value:
+			'Signifies that the sending protocol entity is the addressee of a protocol message that is not properly authenticated.',
+		isVisibleExpression: trapTypeVisible(snmp.TrapType.AuthenticationFailure),
+	},
+	{
+		type: 'static-text',
+		id: 'hint_egpneighborloss',
+		label: 'EGP Neighbor Loss',
+		value:
+			'Signifies that an EGP neighbor for whom the sending protocol entity was an EGP peer has been marked down and the peer relationship no longer obtains. Should include <code>egpNeighAddr</code> in varbinds.',
+		isVisibleExpression: trapTypeVisible(snmp.TrapType.EgpNeighborLoss),
+	},
+]
 
 export const EnterpriseOidOption = {
 	type: 'textinput',
@@ -407,6 +459,7 @@ export default async function (self) {
 			ObjectTypeOptions,
 			ObjectValueOption,
 			...ObjectTypeHints,
+			...TrapTypeHints,
 		],
 		callback: async ({ options }, _context) => {
 			const { messageType, trapType, oidEnterprise, oidVarbind, objectType, objectValue } = options
