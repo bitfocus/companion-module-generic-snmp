@@ -66,10 +66,10 @@ export default function () {
 			type: 'textinput',
 			id: 'walk',
 			width: 6,
-			label: 'Walk OID',
+			label: 'Walk OIDs',
 			default: '',
-			description: 'On initialization, walk the MIB starting at this OID',
-			regex: '/^(0|1|2)(.(0|[1-9]d*))+$/',
+			description: 'Comma seperated list of OIDs to walk on init.',
+			regex: '/^(0|1|2)(\\.(0|[1-9]\\d*))+(?:,\\s*(0|1|2)(\\.(0|[1-9]\\d*))+)*$/',
 		},
 		{
 			type: 'static-text',

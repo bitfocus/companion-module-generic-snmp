@@ -103,11 +103,14 @@ export class Generic_SNMP extends InstanceBase {
 			}
 		}
 		if (this.config.walk) {
-			try {
-				await this.walk(this.config.walk)
-			} catch (err) {
-				this.log('warn', `Walk failed - ${err instanceof Error ? err.message : err.toString()}`)
-			}
+			const walkPaths = this.config.walk.split(',').map((oid) => oid.trim())
+			walkPaths.forEach(async (oid) => {
+				try {
+					await this.walk(oid)
+				} catch (err) {
+					this.log('warn', `Walk failed - ${err instanceof Error ? err.message : err.toString()}`)
+				}
+			})
 		}
 
 		if (this.config.interval > 0) {
