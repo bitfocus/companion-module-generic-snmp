@@ -488,16 +488,6 @@ export class Generic_SNMP extends InstanceBase {
 		)
 	}
 
-	pollOids() {
-		this.subscribeActions('getOID')
-		this.subscribeFeedbacks('getOID', 'getOIDKnown')
-		if (this.config.interval > 0) {
-			this.pollTimer = setTimeout(() => {
-				this.pollOids()
-			}, this.config.interval * 1000)
-		}
-	}
-
 	/**
 	 * Sends an SNMP INFORM notification.
 	 *
@@ -586,6 +576,16 @@ export class Generic_SNMP extends InstanceBase {
 	 */
 	getOidChoices() {
 		return Array.from(this.oidValues.keys()).map((oid) => ({ id: oid, label: oid }))
+	}
+
+	pollOids() {
+		this.subscribeActions('getOID')
+		this.subscribeFeedbacks('getOID', 'getOIDKnown')
+		if (this.config.interval > 0) {
+			this.pollTimer = setTimeout(() => {
+				this.pollOids()
+			}, this.config.interval * 1000)
+		}
 	}
 
 	throttledFeedbackIdCheck = throttle(
