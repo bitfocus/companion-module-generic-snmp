@@ -1,4 +1,5 @@
 import snmp from 'net-snmp'
+import { generateEngineId } from './oidUtils.js'
 
 export default [
 	/*
@@ -106,6 +107,7 @@ export default [
 		config.portBind ??= 162
 		config.trapPort ??= 162
 		config.walk ??= ''
+		config.engineID = config.engineID || generateEngineId()
 
 		result.updatedConfig = config
 		for (const feedback of props.feedbacks) {
