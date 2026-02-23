@@ -35,7 +35,7 @@ export default function () {
 			id: 'trapPort',
 			label: 'Trap Port',
 			width: 6,
-			min: 162,
+			min: 1,
 			max: 65535,
 			default: 162,
 			required: true,
@@ -69,7 +69,8 @@ export default function () {
 			label: 'Walk OIDs',
 			default: '',
 			description: 'Comma seperated list of OIDs to walk on init.',
-			regex: '/^(0|1|2)(\\.(0|[1-9]\\d*))+(?:,\\s*(0|1|2)(\\.(0|[1-9]\\d*))+)*$/',
+			regex: '/^$|^(0|1|2)(\\.(0|[1-9]\\d*))+(?:,\\s*(0|1|2)(\\.(0|[1-9]\\d*))+)*$/',
+			required: false,
 		},
 		{
 			type: 'static-text',
