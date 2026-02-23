@@ -110,7 +110,9 @@ export class Generic_SNMP extends InstanceBase {
 			const walkPaths = this.config.walk.split(',').map((oid) => oid.trim())
 			walkPaths.forEach(async (oid) => {
 				try {
+					this.log('info', `Walking ${oid}...`)
 					await this.walk(oid)
+					this.log('info', `Walk of ${oid} complete!`)
 				} catch (err) {
 					this.log('warn', `Walk failed - ${err instanceof Error ? err.message : err.toString()}`)
 				}

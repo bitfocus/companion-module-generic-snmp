@@ -1,5 +1,7 @@
 import { EventEmitter } from 'events'
 
+const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+
 /**
  * Wrapper for Companion's SharedUDPSocket that implements the dgram.Socket interface
  * for use with node-net-snmp library. Filters messages by source IP address.
@@ -21,9 +23,11 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 		/** @type {import('@companion-module/base').SharedUdpSocket} */
 		this.sharedSocket = sharedSocket
 
+		if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error(`Port out of range: ${port}`)
 		/** @type {number} */
 		this.port = port
 
+		if (!allowedAddress.match(ipRegex)) throw new Error(`Allowed Address must be a IPv4 address: ${allowedAddress}`)
 		/** @type {string} */
 		this.allowedAddress = allowedAddress // IP address to filter by
 
