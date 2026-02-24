@@ -266,6 +266,7 @@ export enum ActionId {
 	SetNumber = 'setNumber',
 	SetBoolean = 'setBoolean',
 	SetIpAddress = 'setIpAddress',
+	SetOpaque = 'setOpaque',
 	SetOID = 'setOID',
 	GetOID = 'getOID',
 	TrapOrInform = 'trapOrInform',
@@ -291,7 +292,28 @@ export default function (self: Generic_SNMP): void {
 			await self.setOid(oid, snmp.ObjectType.OctetString, value)
 		},
 	}
-
+	actionDefs[ActionId.SetOpaque] = {
+		name: 'Set OID value to an Opaque',
+		options: [
+			{
+				type: 'dropdown',
+				id: 'oid',
+				label: 'OID',
+				choices: self.getOidChoices(snmp.ObjectType.Opaque),
+				default: self.getOidChoices(snmp.ObjectType.Opaque)[0]?.id ?? '',
+			},
+			{
+				...ValueOption,
+				regex: '/^(?:\\$\\([a-zA-Z0-9\\-_.]+:[a-zA-Z0-9\\-_.]+\\)|[A-Za-z0-9+/]*={0,2})$/',
+				description: 'Enter the value as a base64 encoded string (e.g. SGVsbG8gV29ybGQ=)',
+			},
+		],
+		callback: async ({ options }, _context) => {
+			const oid = String(options.oid)
+			const value = String(options.value)
+			await self.setOid(oid, snmp.ObjectType.Opaque, value)
+		},
+	}
 	actionDefs[ActionId.SetNumber] = {
 		name: 'Set OID value to a Number',
 		options: [
