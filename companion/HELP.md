@@ -47,7 +47,10 @@ You can perform the following actions with this module:
 
 - Get OID value, return to custom variable
   - Optional update based on connection poll
-  - As of v2.4.0 OctetString always converted to DisplayString
+  - `OctetString` may be converted to `DisplayString`
+  - Numeric values may be divided by the `Scaling Divisor` field to achieved fixed precision decimal values
+  - `Counter64` OIDs returned as strings
+  - `Opaque` OIDs returned as `base64` strings
 - Send Trap or Inform message
 - Set OID value to an OctetString
 - Set OID value to a Number. This includes the following SNMP Object Types:
@@ -63,9 +66,9 @@ You can perform the following actions with this module:
 ## Feedbacks
 
 - OID value
-  - May be updated based on connection poll
+  - Optional update based on connection poll
   - Always updated via SNMP Trap
-  - OctetString optionally converted to DisplayString
-  - Numeric values may be divied by the `Scaling Divisor` field to achieved fixed precision decimal values
-  - As a value feedback, it can be accessed in the `Local Variables` tab
-  - Known OIDs feedback presents a dropdown of already cached VarBind OIDs
+  - `OctetString` may be converted to `DisplayString`
+  - Numeric values may be divided by the `Scaling Divisor` field to achieved fixed precision decimal values
+  - `Counter64` OIDs returned as strings
+  - `Opaque` OIDs returned as `base64` strings
