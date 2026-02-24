@@ -137,6 +137,8 @@ export default [
 		for (const feedback of props.feedbacks) {
 			if (feedback.feedbackId === 'getOID') {
 				feedback.options.div ??= 1
+				feedback.options.update ??= true
+				feedback.options.displaystring ??= true
 				result.updatedFeedbacks.push(feedback)
 			}
 		}
