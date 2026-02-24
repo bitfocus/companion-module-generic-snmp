@@ -488,7 +488,7 @@ export class Generic_SNMP extends InstanceBase<ModuleConfig, ModuleSecrets> {
 	 * @returns Resolves when the inform is acknowledged, or rejects on error.
 	 */
 
-	async sendInform(typeOrOid: snmp.TrapType | string, varbinds: snmp.Varbind[] = []): Promise<void> {
+	async sendInform(typeOrOid: snmp.TrapType | string, ...varbinds: snmp.Varbind[]): Promise<void> {
 		return await this.snmpQueue.add(
 			async () => {
 				return new Promise<void>((resolve, reject) => {
@@ -529,7 +529,7 @@ export class Generic_SNMP extends InstanceBase<ModuleConfig, ModuleSecrets> {
 	 *   to include with the trap. Only used when `typeOrOid` is an OID string.
 	 * @returns Resolves when the trap is sent, or rejects on error.
 	 */
-	async sendTrap(typeOrOid: snmp.TrapType | string, varbinds: snmp.Varbind[] = []): Promise<void> {
+	async sendTrap(typeOrOid: snmp.TrapType | string, ...varbinds: snmp.Varbind[]): Promise<void> {
 		return await this.snmpQueue.add(
 			async () => {
 				return new Promise<void>((resolve, reject) => {

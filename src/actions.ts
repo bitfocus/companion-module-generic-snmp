@@ -571,10 +571,10 @@ export default function (self: Generic_SNMP): void {
 			}
 			switch (messageType) {
 				case 'inform':
-					await self.sendInform(String(oidEnterprise), [VarBind])
+					await self.sendInform(String(oidEnterprise), VarBind)
 					return
 				case 'trap':
-					await self.sendTrap(String(oidEnterprise), [VarBind])
+					await self.sendTrap(String(oidEnterprise), VarBind)
 					return
 			}
 		},
