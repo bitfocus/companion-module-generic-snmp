@@ -283,6 +283,7 @@ export default function (self: Generic_SNMP): void {
 				label: 'OID',
 				choices: self.getOidChoices(snmp.ObjectType.OctetString),
 				default: self.getOidChoices(snmp.ObjectType.OctetString)[0]?.id ?? '',
+				regex: '/^\\d+(?:\\.\\d+)*$/',
 			},
 			ValueOption,
 		],
@@ -301,6 +302,7 @@ export default function (self: Generic_SNMP): void {
 				label: 'OID',
 				choices: self.getOidChoices(snmp.ObjectType.Opaque),
 				default: self.getOidChoices(snmp.ObjectType.Opaque)[0]?.id ?? '',
+				regex: '/^\\d+(?:\\.\\d+)*$/',
 			},
 			{
 				...ValueOption,
@@ -334,6 +336,7 @@ export default function (self: Generic_SNMP): void {
 						snmp.ObjectType.Integer,
 						snmp.ObjectType.TimeTicks,
 					)[0]?.id ?? '',
+				regex: '/^\\d+(?:\\.\\d+)*$/',
 			},
 			{
 				type: 'dropdown',
@@ -386,6 +389,7 @@ export default function (self: Generic_SNMP): void {
 				label: 'OID',
 				choices: self.getOidChoices(snmp.ObjectType.Boolean),
 				default: self.getOidChoices(snmp.ObjectType.Boolean)[0]?.id ?? '',
+				regex: '/^\\d+(?:\\.\\d+)*$/',
 			},
 			{
 				type: 'textinput',
@@ -445,6 +449,7 @@ export default function (self: Generic_SNMP): void {
 				label: 'OID',
 				choices: self.getOidChoices(snmp.ObjectType.IpAddress),
 				default: self.getOidChoices(snmp.ObjectType.IpAddress)[0]?.id ?? '',
+				regex: '/^\\d+(?:\\.\\d+)*$/',
 			},
 			{
 				...ValueOption,
@@ -479,6 +484,7 @@ export default function (self: Generic_SNMP): void {
 				label: 'OID',
 				choices: self.getOidChoices(snmp.ObjectType.OID),
 				default: self.getOidChoices(snmp.ObjectType.OID)[0]?.id ?? '',
+				regex: '/^\\d+(?:\\.\\d+)*$/',
 			},
 			{
 				...ValueOption,
@@ -513,6 +519,7 @@ export default function (self: Generic_SNMP): void {
 				label: 'OID',
 				choices: self.getOidChoices(),
 				default: self.getOidChoices()[0]?.id ?? '',
+				regex: '/^\\d+(?:\\.\\d+)*$/',
 			},
 			{
 				type: 'custom-variable',

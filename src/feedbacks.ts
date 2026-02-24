@@ -32,6 +32,7 @@ export default function (self: Generic_SNMP): void {
 				label: 'OID',
 				choices: self.getOidChoices(),
 				default: self.getOidChoices()[0]?.id ?? '',
+				regex: '/^\\d+(?:\\.\\d+)*$/',
 			},
 			DivisorOption,
 			DisplayStringOption,
