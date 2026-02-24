@@ -1,7 +1,30 @@
-import { Regex } from '@companion-module/base'
+import { Regex, type SomeCompanionConfigField } from '@companion-module/base'
 import { generateEngineId } from './oidUtils.js'
 
-export default function () {
+export interface ModuleConfig {
+	ip: string
+	port: number
+	trapPort: number
+	version: 'v1' | 'v2c' | 'v3'
+	community: string
+	walk: string
+	engineID: string
+	username: string
+	securityLevel: 'noAuthNoPriv' | 'authNoPriv' | 'authPriv'
+	authProtocol: 'md5' | 'sha'
+	privProtocol: 'aes' | 'aes256b' | 'aes256r' | 'des'
+	traps: boolean
+	portBind: number
+	interval: number
+	verbose: boolean
+}
+
+export interface ModuleSecrets {
+	authKey: string
+	privKey: string
+}
+
+export default function (): SomeCompanionConfigField[] {
 	const hasLegacyProviders = process.execArgv.includes('--openssl-legacy-provider')
 	const privProtocols = [
 		{ id: 'aes', label: '128-bit AES encryption (CFB-AES-128)' },
@@ -52,7 +75,6 @@ export default function () {
 				{ id: 'v3', label: 'SNMP v3' },
 			],
 			default: 'v1',
-			required: true,
 		},
 		{
 			type: 'textinput',
@@ -76,6 +98,7 @@ export default function () {
 			type: 'static-text',
 			id: 'infov3',
 			width: 12,
+			label: '',
 			value: '<h6>SNMP v3 Configuration</h6>',
 			isVisibleExpression: ` $(options:version) === 'v3'`,
 		},

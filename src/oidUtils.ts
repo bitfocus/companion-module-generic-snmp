@@ -12,7 +12,7 @@ const UINT64_MAX = 18446744073709551615n
  * @returns {string} The trimmed OID string
  */
 
-export const trimOid = (oid) => {
+export const trimOid = (oid: string): string => {
 	while (oid.startsWith('.')) {
 		oid = oid.substring(1)
 	}
@@ -25,16 +25,16 @@ export const trimOid = (oid) => {
  * @returns {boolean} True if the value is a valid SNMP OID
  */
 
-export const isValidSnmpOid = (value) => /^(0|1|2)(\.(0|[1-9]\d*))+$/u.test(value)
+export const isValidSnmpOid = (value: string): boolean => /^(0|1|2)(\.(0|[1-9]\d*))+$/u.test(value)
 
 /**
  * Convert a buffer to a BigInt
- * @param {Buffer} buffer - The buffer to convert
- * @param {number} [start=0] - Starting position in the buffer
- * @param {number} [end=buffer.length] - Ending position in the buffer
- * @returns {bigint} The buffer converted to a BigInt
+ * @param buffer - The buffer to convert
+ * @param start - Starting position in the buffer
+ * @param end - Ending position in the buffer
+ * @returns The buffer converted to a BigInt
  */
-export const bufferToBigInt = (buffer, start = 0, end = buffer.length) => {
+export const bufferToBigInt = (buffer: Buffer, start = 0, end = buffer.length): bigint => {
 	const bufferAsHexString = buffer.slice(start, end).toString('hex')
 	return BigInt(`0x${bufferAsHexString}`)
 }
@@ -43,18 +43,18 @@ export const bufferToBigInt = (buffer, start = 0, end = buffer.length) => {
  * Validates and converts a string value to the appropriate type for an SNMP varbind,
  * then validates the OID.
  *
- * @param {{ oid: string, type: number, value: string }} varbind - The varbind to validate and convert
- * @returns {{ oid: string, type: number, value: * }} The validated and converted varbind
+ * @param varbind - The varbind to validate and convert
+ * @returns The validated and converted varbind
  * @throws {Error} If the OID is invalid, the value cannot be converted, or is out of range
  */
-export const validateAndConvertVarbind = (varbind) => {
+export const validateAndConvertVarbind = (varbind: snmp.Varbind): snmp.Varbind => {
 	const oid = trimOid(varbind.oid)
 	if (!isValidSnmpOid(oid)) {
 		throw new Error(`Invalid OID: "${varbind.oid}"`)
 	}
 
 	const { type } = varbind
-	let raw = varbind.value
+	let raw = varbind.value?.toString() ?? ''
 
 	let value
 
@@ -153,23 +153,40 @@ export const validateAndConvertVarbind = (varbind) => {
  * @returns {Array<{ oid: string, type: number, value: * }>} The validated and converted varbinds
  * @throws {Error} If any varbind has an invalid OID, unconvertible value, or out-of-range value
  */
-export const validateVarbinds = (varbinds) => {
+export const validateVarbinds = (varbinds: snmp.Varbind[]): snmp.Varbind[] => {
 	return varbinds.map((varbind, index) => {
 		try {
 			return validateAndConvertVarbind(varbind)
 		} catch (error) {
-			throw new Error(`Varbind at index ${index}: ${error.message}`)
+			if (error instanceof Error) throw new Error(`Varbind at index ${index}: ${error.message}`)
+			throw error
 		}
 	})
+}
+
+export function prepareVarbindForVariableAssignment(
+	varbind: snmp.Varbind,
+	displayString = false,
+	divisor = 1,
+): string | number | boolean | null {
+	const value = varbind.value
+	if (typeof value == 'number') return value / divisor
+	if (varbind.type == snmp.ObjectType.OctetString && displayString) return value?.toLocaleString() ?? ''
+	if (varbind.type == snmp.ObjectType.Counter64 && Buffer.isBuffer(value)) return bufferToBigInt(value).toString()
+	if (typeof value == 'bigint') return value.toString()
+	if (varbind.type == snmp.ObjectType.Opaque && Buffer.isBuffer(value)) return value.toString('base64')
+	if (Buffer.isBuffer(value)) return value.toString('base64')
+
+	return value || null
 }
 
 /**
  * Generates a random valid SNMP Engine ID
  * Format: 4 bytes enterprise OID + 1 format byte + 8 random bytes
- * @param {number} [enterpriseOid=63849] - The enterprise OID number to use
- * @returns {string} The engine ID as a hex string
+ * @param enterpriseOid  - The enterprise OID number to use. Defaults to 63849 (Bitfocus)
+ * @returns The engine ID as a hex string
  */
-export const generateEngineId = (enterpriseOid = 63849) => {
+export const generateEngineId = (enterpriseOid = 63849): string => {
 	const enterpriseBytes = Buffer.alloc(4)
 	enterpriseBytes.writeUInt32BE((enterpriseOid | 0x80000000) >>> 0)
 

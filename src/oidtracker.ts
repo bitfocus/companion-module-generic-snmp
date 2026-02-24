@@ -5,22 +5,20 @@ import { trimOid, isValidSnmpOid } from './oidUtils.js'
  * Allows efficient lookup of which feedbacks are watching which OIDs and vice versa.
  */
 export class FeedbackOidTracker {
-	constructor() {
-		/** @type {Map<string, Set<string>>} Map of OID to Set of feedback IDs watching that OID */
-		this.oidToFeedbacks = new Map()
+	/** Map of OID to Set of feedback IDs watching that OID */
+	oidToFeedbacks: Map<string, Set<string>> = new Map()
+	/** Map of feedback ID to the OID it's watching */
+	feedbackToOid: Map<string, string> = new Map()
 
-		/** @type {Map<string, string>} Map of feedback ID to the OID it's watching */
-		this.feedbackToOid = new Map()
-	}
+	constructor() {}
 
 	/**
 	 * Register a feedback to watch a specific OID
 	 *
-	 * @param {string} feedbackId - The feedback instance ID
-	 * @param {string} oid - The SNMP OID to watch
-	 * @returns {void}
+	 * @param feedbackId - The feedback instance ID
+	 * @param oid - The SNMP OID to watch
 	 */
-	addFeedback(feedbackId, oid) {
+	addFeedback(feedbackId: string, oid: string): void {
 		// Remove any existing mapping for this feedback first
 		this.removeFeedback(feedbackId)
 		oid = trimOid(oid)
@@ -32,7 +30,7 @@ export class FeedbackOidTracker {
 		if (!this.oidToFeedbacks.has(oid)) {
 			this.oidToFeedbacks.set(oid, new Set())
 		}
-		this.oidToFeedbacks.get(oid).add(feedbackId)
+		this.oidToFeedbacks.get(oid)?.add(feedbackId)
 
 		// Map feedback ID to OID
 		this.feedbackToOid.set(feedbackId, oid)
@@ -41,21 +39,19 @@ export class FeedbackOidTracker {
 	/**
 	 * Update a feedback's OID (removes old mapping and creates new one)
 	 *
-	 * @param {string} feedbackId - The feedback instance ID
-	 * @param {string} newOid - The new SNMP OID to watch
-	 * @returns {void}
+	 * @param feedbackId - The feedback instance ID
+	 * @param newOid - The new SNMP OID to watch
 	 */
-	updateFeedback(feedbackId, newOid) {
+	updateFeedback(feedbackId: string, newOid: string): void {
 		this.addFeedback(feedbackId, newOid)
 	}
 
 	/**
 	 * Remove a feedback from tracking
 	 *
-	 * @param {string} feedbackId - The feedback instance ID to remove
-	 * @returns {void}
+	 * @param feedbackId - The feedback instance ID to remove
 	 */
-	removeFeedback(feedbackId) {
+	removeFeedback(feedbackId: string): void {
 		// Get the OID this feedback was watching
 		const oldOid = this.feedbackToOid.get(feedbackId)
 
@@ -79,30 +75,30 @@ export class FeedbackOidTracker {
 	/**
 	 * Get all feedback IDs watching a specific OID
 	 *
-	 * @param {string} oid - The SNMP OID
-	 * @returns {Set<string>} Set of feedback IDs (empty set if none)
+	 * @param oid - The SNMP OID
+	 * @returns Set of feedback IDs (empty set if none)
 	 */
-	getFeedbacksForOid(oid) {
+	getFeedbacksForOid(oid: string): Readonly<Set<string>> {
 		return this.oidToFeedbacks.get(oid) || new Set()
 	}
 
 	/**
 	 * Get the OID that a feedback is watching
 	 *
-	 * @param {string} feedbackId - The feedback instance ID
-	 * @returns {string | undefined} The OID being watched, or undefined if not found
+	 * @param feedbackId - The feedback instance ID
+	 * @returns The OID being watched, or undefined if not found
 	 */
-	getOidForFeedback(feedbackId) {
+	getOidForFeedback(feedbackId: string): string | undefined {
 		return this.feedbackToOid.get(feedbackId)
 	}
 
 	/**
 	 * Check if any feedbacks are watching a specific OID
 	 *
-	 * @param {string} oid - The SNMP OID
-	 * @returns {boolean} True if at least one feedback is watching this OID
+	 * @param oid - The SNMP OID
+	 * @returns True if at least one feedback is watching this OID
 	 */
-	hasWatchersForOid(oid) {
+	hasWatchersForOid(oid: string): boolean {
 		const feedbacks = this.oidToFeedbacks.get(oid)
 		return feedbacks ? feedbacks.size > 0 : false
 	}
@@ -110,28 +106,28 @@ export class FeedbackOidTracker {
 	/**
 	 * Get all OIDs currently being watched
 	 *
-	 * @returns {string[]} Array of all OIDs that have at least one watcher
+	 * @returns Array of all OIDs that have at least one watcher
 	 */
-	getAllWatchedOids() {
+	getAllWatchedOids(): string[] {
 		return Array.from(this.oidToFeedbacks.keys())
 	}
 
 	/**
 	 * Get total number of feedbacks being tracked
 	 *
-	 * @returns {number} Total number of feedbacks
+	 * @returns Total number of feedbacks
 	 */
-	getFeedbackCount() {
+	getFeedbackCount(): number {
 		return this.feedbackToOid.size
 	}
 
 	/**
 	 * Get all feedback IDs watching a specific OID as an array
 	 *
-	 * @param {string} oid - The SNMP OID
-	 * @returns {string[]} Array of feedback IDs (empty array if none)
+	 * @param oid - The SNMP OID
+	 * @returns Array of feedback IDs (empty array if none)
 	 */
-	getFeedbackIdsForOid(oid) {
+	getFeedbackIdsForOid(oid: string): string[] {
 		const feedbackSet = this.oidToFeedbacks.get(oid)
 		return feedbackSet ? Array.from(feedbackSet) : []
 	}
@@ -139,9 +135,8 @@ export class FeedbackOidTracker {
 	/**
 	 * Clear all mappings
 	 *
-	 * @returns {void}
 	 */
-	clear() {
+	clear(): void {
 		this.oidToFeedbacks.clear()
 		this.feedbackToOid.clear()
 	}

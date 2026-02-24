@@ -1,4 +1,13 @@
-import { Regex } from '@companion-module/base'
+import {
+	CompanionActionDefinition,
+	type CompanionInputFieldCheckbox,
+	type CompanionInputFieldDropdown,
+	type CompanionInputFieldStaticText,
+	type CompanionInputFieldTextInput,
+	Regex,
+} from '@companion-module/base'
+import type { Generic_SNMP } from './index.js'
+import { prepareVarbindForVariableAssignment } from './oidUtils.js'
 import snmp from 'net-snmp'
 
 export const OidRegex =
@@ -12,7 +21,7 @@ export const OidOption = {
 	required: true,
 	regex: OidRegex,
 	useVariables: { local: true },
-}
+} as const satisfies CompanionInputFieldTextInput
 
 const ValueOption = {
 	type: 'textinput',
@@ -22,7 +31,7 @@ const ValueOption = {
 	required: true,
 	regex: Regex.SOMETHING,
 	useVariables: { local: true },
-}
+} as const satisfies CompanionInputFieldTextInput
 
 export const DisplayStringOption = {
 	type: 'checkbox',
@@ -30,7 +39,15 @@ export const DisplayStringOption = {
 	id: 'displaystring',
 	tooltip: 'Convert OctetString (array of numbers) to DisplayString (text)',
 	default: true,
-}
+} as const satisfies CompanionInputFieldCheckbox
+
+export const UpdateOption = {
+	type: 'checkbox',
+	label: 'Update',
+	id: 'update',
+	tooltip: 'Update each poll interval',
+	default: false,
+} as const satisfies CompanionInputFieldCheckbox
 
 export const TrapOrInformOption = {
 	type: 'dropdown',
@@ -41,7 +58,7 @@ export const TrapOrInformOption = {
 		{ id: 'inform', label: 'Inform' },
 	],
 	default: 'trap',
-}
+} as const satisfies CompanionInputFieldDropdown
 
 export const TrapOrOidOption = {
 	type: 'dropdown',
@@ -57,8 +74,8 @@ export const TrapOrOidOption = {
 		{ id: snmp.TrapType.EnterpriseSpecific, label: 'Enterprise-specific Trap' },
 	],
 	default: snmp.TrapType.EnterpriseSpecific,
-}
-const trapTypeVisible = (trapType) => `$(options:trapType) == ${trapType}`
+} as const satisfies CompanionInputFieldDropdown
+const trapTypeVisible = (trapType: snmp.TrapType): string => `$(options:trapType) == ${trapType}`
 
 export const TrapTypeHints = [
 	{
@@ -109,7 +126,7 @@ export const TrapTypeHints = [
 			'Signifies that an EGP neighbor for whom the sending protocol entity was an EGP peer has been marked down and the peer relationship no longer obtains. Should include <code>egpNeighAddr</code> in varbinds.',
 		isVisibleExpression: trapTypeVisible(snmp.TrapType.EgpNeighborLoss),
 	},
-]
+] as const satisfies CompanionInputFieldStaticText[]
 
 export const EnterpriseOidOption = {
 	type: 'textinput',
@@ -121,7 +138,7 @@ export const EnterpriseOidOption = {
 	useVariables: { local: true },
 	isVisibleExpression: `$(options:trapType) == ${snmp.TrapType.EnterpriseSpecific}`,
 	description: 'Enterprise, Inform or Trap OID depending on configuration',
-}
+} as const satisfies CompanionInputFieldTextInput
 
 export const VarbindOidOption = {
 	type: 'textinput',
@@ -132,7 +149,7 @@ export const VarbindOidOption = {
 	regex: OidRegex,
 	useVariables: { local: true },
 	isVisibleExpression: `$(options:trapType) == ${snmp.TrapType.EnterpriseSpecific}`,
-}
+} as const satisfies CompanionInputFieldTextInput
 
 export const ObjectTypeOptions = {
 	type: 'dropdown',
@@ -153,7 +170,7 @@ export const ObjectTypeOptions = {
 	],
 	default: snmp.ObjectType.Integer,
 	isVisibleExpression: `$(options:trapType) == ${snmp.TrapType.EnterpriseSpecific}`,
-}
+} as const satisfies CompanionInputFieldDropdown
 
 export const ObjectValueOption = {
 	type: 'textinput',
@@ -162,7 +179,7 @@ export const ObjectValueOption = {
 	default: '',
 	useVariables: { local: true },
 	isVisibleExpression: `$(options:trapType) == ${snmp.TrapType.EnterpriseSpecific} && $(options:objectType) != ${snmp.ObjectType.Null}`,
-}
+} as const satisfies CompanionInputFieldTextInput
 
 const enterpriseSpecific = `$(options:trapType) == ${snmp.TrapType.EnterpriseSpecific}`
 
@@ -241,27 +258,31 @@ export const ObjectTypeHints = [
 		value: 'Buffer encoded as Base64 string. Will be padded as necessary',
 		isVisibleExpression: `${enterpriseSpecific} && $(options:objectType) == ${snmp.ObjectType.Opaque}`,
 	},
-]
+] as const satisfies CompanionInputFieldStaticText[]
 
-/** @typedef {InstanceType<typeof import('./index.js').Generic_SNMP>} Generic_SNMP */
+export enum ActionId {
+	SetString = 'setString',
+	SetNumber = 'setNumber',
+	SetBoolean = 'setBoolean',
+	SetIpAddress = 'setIpAddress',
+	SetOID = 'setOID',
+	GetOID = 'getOID',
+	TrapOrInform = 'trapOrInform',
+}
 
-/**
- * @param {Generic_SNMP} self
- */
-
-export default async function (self) {
-	const actionDefs = {}
-	actionDefs['setString'] = {
+export default function (self: Generic_SNMP): void {
+	const actionDefs = {} as Record<ActionId, CompanionActionDefinition>
+	actionDefs[ActionId.SetString] = {
 		name: 'Set OID value to an OctetString',
 		options: [OidOption, ValueOption],
 		callback: async ({ options }, _context) => {
-			const oid = options.oid
-			const value = options.value
+			const oid = String(options.oid)
+			const value = String(options.value)
 			await self.setOid(oid, snmp.ObjectType.OctetString, value)
 		},
 	}
 
-	actionDefs['setNumber'] = {
+	actionDefs[ActionId.SetNumber] = {
 		name: 'Set OID value to a Number',
 		options: [
 			OidOption,
@@ -286,28 +307,28 @@ export default async function (self) {
 			},
 		],
 		callback: async ({ options }, _context) => {
-			const oid = options.oid
-			const intValue = parseInt(options.value)
+			const oid = String(options.oid)
+			const intValue = parseInt(options.value?.toString() ?? '')
 
 			if (Number.isNaN(intValue)) {
 				throw new Error(`Value "${intValue}" is not an number. SNMP message not sent.`)
 			}
 
-			await self.setOid(oid, options.type, intValue)
+			await self.setOid(oid, options.type as snmp.ObjectType, intValue)
 		},
 		learn: async ({ options }, _context) => {
-			await self.getOid(options.oid)
-			if (self.oidValues.has(options.oid)) {
+			await self.getOid(String(options.oid))
+			if (self.oidValues.has(options.oid?.toString() ?? '')) {
 				return {
 					...options,
-					value: self.oidValues.get(options.oid).toString(),
+					value: self.oidValues.get(options.oid?.toString() ?? '')?.value?.toLocaleString(),
 				}
 			}
 			return undefined
 		},
 	}
 
-	actionDefs['setBoolean'] = {
+	actionDefs[ActionId.SetBoolean] = {
 		name: 'Set OID value to a Boolean',
 		options: [
 			OidOption,
@@ -321,8 +342,8 @@ export default async function (self) {
 			},
 		],
 		callback: async ({ options }, _context) => {
-			const oid = options.oid
-			const parsedValue = options.value
+			const oid = options.oid?.toString() ?? ''
+			const parsedValue = options.value?.toString() ?? ''
 			let booleanValue = false
 
 			switch (parsedValue.trim().toLocaleLowerCase()) {
@@ -348,18 +369,19 @@ export default async function (self) {
 			await self.setOid(oid, snmp.ObjectType.Boolean, booleanValue)
 		},
 		learn: async ({ options }, _context) => {
-			await self.getOid(options.oid)
-			if (self.oidValues.has(options.oid)) {
+			const oid = options.oid?.toString() ?? ''
+			await self.getOid(oid)
+			if (self.oidValues.has(oid)) {
 				return {
 					...options,
-					value: self.oidValues.get(options.oid).toString(),
+					value: self.oidValues.get(oid)?.value?.toLocaleString(),
 				}
 			}
 			return undefined
 		},
 	}
 
-	actionDefs['setIpAddress'] = {
+	actionDefs[ActionId.SetIpAddress] = {
 		name: 'Set OID value to an IP Address',
 		options: [
 			OidOption,
@@ -370,23 +392,24 @@ export default async function (self) {
 			},
 		],
 		callback: async ({ options }, _context) => {
-			const oid = options.oid
-			const value = options.value
+			const oid = options.oid?.toString() ?? ''
+			const value = String(options.value)
 			await self.setOid(oid, snmp.ObjectType.IpAddress, value)
 		},
 		learn: async ({ options }, _context) => {
-			await self.getOid(options.oid)
-			if (self.oidValues.has(options.oid)) {
+			const oid = options.oid?.toString() ?? ''
+			await self.getOid(oid)
+			if (self.oidValues.has(oid)) {
 				return {
 					...options,
-					value: self.oidValues.get(options.oid).toString(),
+					value: self.oidValues.get(oid)?.value?.toLocaleString(),
 				}
 			}
 			return undefined
 		},
 	}
 
-	actionDefs['setOID'] = {
+	actionDefs[ActionId.SetOID] = {
 		name: 'Set OID value to an OID',
 		options: [
 			OidOption,
@@ -397,23 +420,24 @@ export default async function (self) {
 			},
 		],
 		callback: async ({ options }, _context) => {
-			const oid = options.oid
-			const value = options.value
-			await self.setOid(oid, snmp.ObjectType.oid, value)
+			const oid = String(options.oid)
+			const value = String(options.value)
+			await self.setOid(oid, snmp.ObjectType.OID, value)
 		},
 		learn: async ({ options }, _context) => {
-			await self.getOid(options.oid)
-			if (self.oidValues.has(options.oid)) {
+			const oid = options.oid?.toString() ?? ''
+			await self.getOid(oid)
+			if (self.oidValues.has(oid)) {
 				return {
 					...options,
-					value: self.oidValues.get(options.oid).toString(),
+					value: self.oidValues.get(oid)?.value?.toLocaleString(),
 				}
 			}
 			return undefined
 		},
 	}
 
-	actionDefs['getOID'] = {
+	actionDefs[ActionId.GetOID] = {
 		name: 'Get OID value',
 		options: [
 			OidOption,
@@ -433,23 +457,31 @@ export default async function (self) {
 			DisplayStringOption,
 		],
 		callback: async ({ options }, context) => {
-			await self.getOid(options.oid)
-			const value = self.oidValues.get(options.oid)
-			context.setCustomVariableValue(options.variable, value)
+			const oid = options.oid?.toString() ?? ''
+			await self.getOid(oid)
+			const varbind = self.oidValues.get(oid)
+			if (varbind == undefined || varbind.value === undefined)
+				throw new Error(`Varbind not found, can't update custom variable ${options.variable}`)
+			if (options.variable)
+				context.setCustomVariableValue(
+					options.variable.toString(),
+					prepareVarbindForVariableAssignment(varbind, Boolean(options.displaystring)) ?? '',
+				)
 		},
 		subscribe: async ({ options }, _context) => {
 			if (options.update) {
-				self.pendingOids.add(options.oid)
+				const oid = options.oid?.toString() ?? ''
+				self.pendingOids.add(oid)
 				self.throttledBatchGet()
 			}
 		},
 		learn: async ({ options }, _context) => {
-			await self.getOid(options.oid)
+			await self.getOid(String(options.oid))
 			return undefined
 		},
 	}
 
-	actionDefs['trapOrInform'] = {
+	actionDefs[ActionId.TrapOrInform] = {
 		name: 'Send Trap or Inform message',
 		options: [
 			TrapOrInformOption,
@@ -473,21 +505,25 @@ export default async function (self) {
 			if (trapType !== snmp.TrapType.EnterpriseSpecific) {
 				switch (messageType) {
 					case 'inform':
-						return await self.sendInform(trapType)
+						await self.sendInform(trapType as snmp.TrapType)
+						return
 					case 'trap':
-						return await self.sendTrap(trapType)
+						await self.sendTrap(trapType as snmp.TrapType)
+						return
 				}
 			}
-			const VarBind = {
-				oid: oidVarbind,
-				type: objectType,
-				value: objectValue,
+			const VarBind: snmp.Varbind = {
+				oid: String(oidVarbind),
+				type: objectType as snmp.ObjectType,
+				value: objectValue as snmp.VarbindValue,
 			}
 			switch (messageType) {
 				case 'inform':
-					return await self.sendInform(oidEnterprise, [VarBind])
+					await self.sendInform(String(oidEnterprise), [VarBind])
+					return
 				case 'trap':
-					return await self.sendTrap(oidEnterprise, [VarBind])
+					await self.sendTrap(String(oidEnterprise), [VarBind])
+					return
 			}
 		},
 	}

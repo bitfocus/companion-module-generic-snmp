@@ -1,4 +1,6 @@
 import { EventEmitter } from 'events'
+import type { SharedUdpSocket } from '@companion-module/base'
+import { RemoteInfo } from 'dgram'
 
 const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
 
@@ -10,14 +12,18 @@ const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[
  */
 
 export class SharedUDPSocketWrapper extends EventEmitter {
+	sharedSocket!: SharedUdpSocket
+	port = 162
+	allowedAddress!: string
+	isShared = false
 	/**
 	 * Create a SharedUDPSocket wrapper
 	 *
-	 * @param {import('@companion-module/base').SharedUdpSocket} sharedSocket - The Companion SharedUDPSocket instance
-	 * @param {number} port - The UDP port number
-	 * @param {string} allowedAddress - IP address to filter messages by (only messages from this address are emitted)
+	 * @param sharedSocket - The Companion SharedUDPSocket instance
+	 * @param port - The UDP port number
+	 * @param allowedAddress - IP address to filter messages by (only messages from this address are emitted)
 	 */
-	constructor(sharedSocket, port, allowedAddress) {
+	constructor(sharedSocket: SharedUdpSocket, port: number, allowedAddress: string) {
 		super()
 
 		/** @type {import('@companion-module/base').SharedUdpSocket} */
@@ -34,40 +40,32 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 		/** @type {boolean} */
 		this.isShared = true
 
-		// Forward only matching messages
-		/** @type {(msg: Buffer, rinfo: import('dgram').RemoteInfo) => void} */
-		this.messageHandler = (msg, rinfo) => {
-			// Only emit if the source address matches
-			if (rinfo.address === this.allowedAddress) {
-				this.emit('message', Buffer.from(msg), rinfo)
-			} else {
-				console.log(`Message recieved from: ${rinfo.address}:${rinfo.port}`)
-			}
-			// Otherwise silently drop
-		}
-
 		this.sharedSocket.on('message', this.messageHandler)
+	}
+
+	// Forward only matching messages
+
+	messageHandler = (msg: Buffer, rinfo: RemoteInfo): void => {
+		// Only emit if the source address matches
+		if (rinfo.address === this.allowedAddress) {
+			this.emit('message', Buffer.from(msg), rinfo)
+		}
 	}
 
 	/**
 	 * Update the allowed IP address filter
 	 *
-	 * @param {string} address - New IP address to filter by
-	 * @returns {void}
 	 */
-	setAllowedAddress(address) {
+	setAllowedAddress(address: string): void {
+		if (!address.match(ipRegex)) throw new Error(`Allowed Address must be a IPv4 address: ${address}`)
 		this.allowedAddress = address
 	}
 
 	/**
 	 * Bind the socket (no-op for SharedUDPSocket which is already bound)
 	 *
-	 * @param {number} port - Port number
-	 * @param {string} [address] - Address to bind to
-	 * @param {() => void} [callback] - Callback function
-	 * @returns {void}
 	 */
-	bind(port, address, callback) {
+	bind(_port: number, _address: string, callback?: () => void): void {
 		if (callback) {
 			process.nextTick(callback)
 		}
@@ -76,10 +74,8 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 
 	/**
 	 * Get socket address information
-	 *
-	 * @returns {{address: string, family: string, port: number}} Address info
 	 */
-	address() {
+	address(): { address: string; family: string; port: number } {
 		return {
 			address: '0.0.0.0',
 			family: 'IPv4',
@@ -91,7 +87,7 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 	 * Get socket type
 	 */
 
-	get type() {
+	get type(): string {
 		return 'udp4'
 	}
 
@@ -99,17 +95,15 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 	 * Spoof createSocket, return self
 	 */
 
-	createSocket(_type) {
+	createSocket(_type: string): SharedUDPSocketWrapper {
 		return this
 	}
 
 	/**
 	 * Close the socket wrapper (removes listener but doesn't close shared socket)
 	 *
-	 * @param {() => void} [callback] - Callback function
-	 * @returns {void}
 	 */
-	close(callback) {
+	close(callback?: () => void): void {
 		this.sharedSocket.removeListener('message', this.messageHandler)
 		if (callback) {
 			process.nextTick(callback)
@@ -119,33 +113,31 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 	/**
 	 * Send a message through the shared socket
 	 *
-	 * @param {Buffer | string | Uint8Array} msg - Message to send
-	 * @param {number} offset - Offset in the buffer
-	 * @param {number} length - Number of bytes to send
-	 * @param {number} port - Destination port
-	 * @param {string} address - Destination address
-	 * @param {(error: Error | null, bytes: number) => void} [callback] - Callback function
-	 * @returns {void}
 	 */
-	send(msg, offset, length, port, address, callback) {
+	send(
+		msg: Buffer | string | DataView<ArrayBufferLike>,
+		offset: number,
+		length: number,
+		port: number,
+		address: string,
+		callback?: () => void,
+	): void {
 		this.sharedSocket.send(msg, offset, length, port, address, callback)
 	}
 
 	/**
 	 * Add a reference to prevent the event loop from exiting
 	 *
-	 * @returns {this}
 	 */
-	ref() {
+	ref(): SharedUDPSocketWrapper {
 		return this
 	}
 
 	/**
 	 * Remove reference to allow the event loop to exit
 	 *
-	 * @returns {this}
 	 */
-	unref() {
+	unref(): SharedUDPSocketWrapper {
 		return this
 	}
 }
