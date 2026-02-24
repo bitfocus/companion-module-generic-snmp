@@ -8,6 +8,7 @@ import {
 } from '@companion-module/base'
 import type { Generic_SNMP } from './index.js'
 import { prepareVarbindForVariableAssignment } from './oidUtils.js'
+import { DivisorOption } from './feedbacks.js'
 import snmp from 'net-snmp'
 
 export const OidRegex =
@@ -274,7 +275,16 @@ export default function (self: Generic_SNMP): void {
 	const actionDefs = {} as Record<ActionId, CompanionActionDefinition>
 	actionDefs[ActionId.SetString] = {
 		name: 'Set OID value to an OctetString',
-		options: [OidOption, ValueOption],
+		options: [
+			{
+				type: 'dropdown',
+				id: 'oid',
+				label: 'OID',
+				choices: self.getOidChoices(snmp.ObjectType.OctetString),
+				default: self.getOidChoices(snmp.ObjectType.OctetString)[0]?.id ?? '',
+			},
+			ValueOption,
+		],
 		callback: async ({ options }, _context) => {
 			const oid = String(options.oid)
 			const value = String(options.value)
@@ -285,7 +295,24 @@ export default function (self: Generic_SNMP): void {
 	actionDefs[ActionId.SetNumber] = {
 		name: 'Set OID value to a Number',
 		options: [
-			OidOption,
+			{
+				type: 'dropdown',
+				id: 'oid',
+				label: 'OID',
+				choices: self.getOidChoices(
+					snmp.ObjectType.Counter,
+					snmp.ObjectType.Gauge,
+					snmp.ObjectType.Integer,
+					snmp.ObjectType.TimeTicks,
+				),
+				default:
+					self.getOidChoices(
+						snmp.ObjectType.Counter,
+						snmp.ObjectType.Gauge,
+						snmp.ObjectType.Integer,
+						snmp.ObjectType.TimeTicks,
+					)[0]?.id ?? '',
+			},
 			{
 				type: 'dropdown',
 				label: 'Type',
@@ -331,7 +358,13 @@ export default function (self: Generic_SNMP): void {
 	actionDefs[ActionId.SetBoolean] = {
 		name: 'Set OID value to a Boolean',
 		options: [
-			OidOption,
+			{
+				type: 'dropdown',
+				id: 'oid',
+				label: 'OID',
+				choices: self.getOidChoices(snmp.ObjectType.Boolean),
+				default: self.getOidChoices(snmp.ObjectType.Boolean)[0]?.id ?? '',
+			},
 			{
 				type: 'textinput',
 				label: 'Value (true/false, yes/no, on/off, 1/0)',
@@ -384,7 +417,13 @@ export default function (self: Generic_SNMP): void {
 	actionDefs[ActionId.SetIpAddress] = {
 		name: 'Set OID value to an IP Address',
 		options: [
-			OidOption,
+			{
+				type: 'dropdown',
+				id: 'oid',
+				label: 'OID',
+				choices: self.getOidChoices(snmp.ObjectType.IpAddress),
+				default: self.getOidChoices(snmp.ObjectType.IpAddress)[0]?.id ?? '',
+			},
 			{
 				...ValueOption,
 				regex:
@@ -412,7 +451,13 @@ export default function (self: Generic_SNMP): void {
 	actionDefs[ActionId.SetOID] = {
 		name: 'Set OID value to an OID',
 		options: [
-			OidOption,
+			{
+				type: 'dropdown',
+				id: 'oid',
+				label: 'OID',
+				choices: self.getOidChoices(snmp.ObjectType.OID),
+				default: self.getOidChoices(snmp.ObjectType.OID)[0]?.id ?? '',
+			},
 			{
 				...ValueOption,
 				regex:
@@ -440,7 +485,13 @@ export default function (self: Generic_SNMP): void {
 	actionDefs[ActionId.GetOID] = {
 		name: 'Get OID value',
 		options: [
-			OidOption,
+			{
+				type: 'dropdown',
+				id: 'oid',
+				label: 'OID',
+				choices: self.getOidChoices(),
+				default: self.getOidChoices()[0]?.id ?? '',
+			},
 			{
 				type: 'custom-variable',
 				label: 'Variable',
@@ -455,6 +506,7 @@ export default function (self: Generic_SNMP): void {
 				default: false,
 			},
 			DisplayStringOption,
+			DivisorOption,
 		],
 		callback: async ({ options }, context) => {
 			const oid = options.oid?.toString() ?? ''
@@ -465,7 +517,7 @@ export default function (self: Generic_SNMP): void {
 			if (options.variable)
 				context.setCustomVariableValue(
 					options.variable.toString(),
-					prepareVarbindForVariableAssignment(varbind, Boolean(options.displaystring)) ?? '',
+					prepareVarbindForVariableAssignment(varbind, Boolean(options.displaystring), Number(options.div)) ?? '',
 				)
 		},
 		subscribe: async ({ options }, _context) => {

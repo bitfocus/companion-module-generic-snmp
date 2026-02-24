@@ -4,7 +4,7 @@ import { prepareVarbindForVariableAssignment, isValidSnmpOid } from './oidUtils.
 import type { CompanionFeedbackDefinition, CompanionInputFieldNumber } from '@companion-module/base'
 // import snmp from 'net-snmp'
 
-const DivisorOption = {
+export const DivisorOption = {
 	type: 'number',
 	id: 'div',
 	label: 'Scaling Divisor',

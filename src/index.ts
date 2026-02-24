@@ -565,9 +565,15 @@ export class Generic_SNMP extends InstanceBase<ModuleConfig, ModuleSecrets> {
 	/**
 	 * Returns a list of dropdown choices from the cached OID values map,
 	 * one entry per OID key.
+	 * @param types snmp Object types to include in the returned dropdown. If empty all types included
 	 */
-	getOidChoices(): DropdownChoice[] {
-		return Array.from(this.oidValues.keys()).map((oid) => ({ id: oid, label: oid }))
+	getOidChoices(...types: snmp.ObjectType[]): DropdownChoice[] {
+		return Array.from(this.oidValues.entries())
+			.filter(([, varbind]) => types.length === 0 || (varbind.type !== undefined && types.includes(varbind.type)))
+			.map(([oid, varbind]) => ({
+				id: oid,
+				label: `${oid} (${snmp.ObjectType[varbind.type!]})`,
+			}))
 	}
 
 	pollOids(): void {
