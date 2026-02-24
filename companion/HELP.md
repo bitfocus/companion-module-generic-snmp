@@ -58,16 +58,14 @@ You can perform the following actions with this module:
 - Set OID value to a Boolean
 - Set OID value to an IP Address
 - Set OID value to an OID
+- Set OID value to an Opaque
 
 ## Feedbacks
 
 - OID value
-- OID value (known OIDs)
-  - Always updates based on connection poll
-  - May also be updated via SNMP Trap
-  - As of v2.4.0 OctetString always converted to DisplayString
+  - May be updated based on connection poll
+  - Always updated via SNMP Trap
+  - OctetString optionally converted to DisplayString
   - Numeric values may be divied by the `Scaling Divisor` field to achieved fixed precision decimal values
   - As a value feedback, it can be accessed in the `Local Variables` tab
   - Known OIDs feedback presents a dropdown of already cached VarBind OIDs
-- OID Trap value
-  - As above but does not poll for updates
