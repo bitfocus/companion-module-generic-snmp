@@ -1,6 +1,6 @@
 import { type CompanionActionDefinitions, type JsonValue } from '@companion-module/base'
 import type Generic_SNMP from './index.js'
-import { prepareVarbindForVariableAssignment, trimOid } from './oidUtils.js'
+import { isValidSnmpOid, prepareVarbindForVariableAssignment, trimOid } from './oidUtils.js'
 import {
 	ValueOption,
 	DivisorOption,
@@ -121,12 +121,14 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			},
 			ValueOption,
 		],
-		callback: async ({ options }, _context) => {
+		callback: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
 			await self.setOid(oid, snmp.ObjectType.OctetString, options.value)
 		},
-		learn: async ({ options }, _context) => {
+		learn: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
 			await self.getOid(oid)
 			if (self.oidValues.has(oid)) {
 				const type = self.oidValues.get(oid)?.type
@@ -152,8 +154,9 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 				description: 'Enter the value as a base64 encoded string (e.g. SGVsbG8gV29ybGQ=)',
 			},
 		],
-		callback: async ({ options }, _context) => {
+		callback: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
 			await self.setOid(oid, snmp.ObjectType.Opaque, options.value)
 		},
 	}
@@ -200,8 +203,9 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			},
 			...NumberObjectTypeHints,
 		],
-		callback: async ({ options }, _context) => {
+		callback: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
 			const intValue = Math.round(options.value)
 
 			if (Number.isNaN(intValue)) {
@@ -210,8 +214,9 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 
 			await self.setOid(oid, options.type, intValue)
 		},
-		learn: async ({ options }, _context) => {
+		learn: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
 			await self.getOid(oid)
 			if (self.oidValues.has(oid)) {
 				const type = self.oidValues.get(oid)?.type
@@ -246,8 +251,9 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 				allowInvalidValues: true,
 			},
 		],
-		callback: async ({ options }, _context) => {
+		callback: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
 			const parsedValue = typeof options.value == 'object' ? JSON.stringify(options.value) : options.value
 			let booleanValue = typeof parsedValue == 'boolean' ? parsedValue : false
 
@@ -273,8 +279,9 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 
 			await self.setOid(oid, snmp.ObjectType.Boolean, booleanValue)
 		},
-		learn: async ({ options }, _context) => {
+		learn: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
 			await self.getOid(oid)
 			if (self.oidValues.has(oid)) {
 				const type = self.oidValues.get(oid)?.type
@@ -301,13 +308,15 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 					'/^(?:\\$\\([a-zA-Z0-9_.\\-]+:[a-zA-Z0-9_.\\-]+\\)|(?:(?:\\d{1,3}|\\$\\([a-zA-Z0-9_.\\-]+:[a-zA-Z0-9_.\\-]+\\))\\.){3}(?:\\d{1,3}|\\$\\([a-zA-Z0-9_.\\-]+:[a-zA-Z0-9_.\\-]+\\)))$/',
 			},
 		],
-		callback: async ({ options }, _context) => {
+		callback: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
 			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.IpAddress, value)
 		},
-		learn: async ({ options }, _context) => {
+		learn: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
 			await self.getOid(oid)
 			if (self.oidValues.has(oid)) {
 				const type = self.oidValues.get(oid)?.type
@@ -334,13 +343,15 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 					'/^(?:\\$\\([a-zA-Z0-9\\-_.]+:[a-zA-Z0-9\\-_.]+\\)|(?:\\d+|\\$\\([a-zA-Z0-9\\-_.]+:[a-zA-Z0-9\\-_.]+\\))(?:\\.(?:\\d+|\\$\\([a-zA-Z0-9\\-_.]+:[a-zA-Z0-9\\-_.]+\\)))*)$/',
 			},
 		],
-		callback: async ({ options }, _context) => {
+		callback: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
 			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.OID, value)
 		},
-		learn: async ({ options }, _context) => {
+		learn: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
 			await self.getOid(oid)
 			if (self.oidValues.has(oid)) {
 				const type = self.oidValues.get(oid)?.type
@@ -380,6 +391,7 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 		],
 		callback: async (action, context) => {
 			const oid = trimOid(action.options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${action.id}`)
 			await self.getOid(oid)
 			const varbind = self.oidValues.get(oid)
 			if (varbind == undefined || varbind.value === undefined)
@@ -392,12 +404,15 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 		},
 		subscribe: async (action, _context) => {
 			const oid = trimOid(action.options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${action.id}`)
 			if (action.options.update) {
 				self.oidTracker.addToPollGroup(oid, action.id)
 			} else self.oidTracker.removeFromPollGroup(oid, action.id)
 		},
-		learn: async ({ options }, _context) => {
-			await self.getOid(trimOid(options.oid))
+		learn: async (action, _context) => {
+			const oid = trimOid(action.options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${action.id}`)
+			await self.getOid(oid)
 			return undefined
 		},
 	}
@@ -422,7 +437,7 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			...ObjectTypeHints,
 			...TrapTypeHints,
 		],
-		callback: async ({ options }, _context) => {
+		callback: async ({ id, options }, _context) => {
 			const { messageType, trapType, oidEnterprise, oidVarbind, objectType, objectValue } = options
 			if (trapType !== snmp.TrapType.EnterpriseSpecific) {
 				switch (messageType) {
@@ -434,6 +449,8 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 						return
 				}
 			}
+			const oid = trimOid(oidVarbind)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
 			const VarBind: snmp.Varbind = {
 				oid: trimOid(oidVarbind),
 				type: objectType,
@@ -448,8 +465,9 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 					return
 			}
 		},
-		learn: async ({ options }, _context) => {
+		learn: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oidVarbind)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
 			await self.getOid(oid)
 			if (self.oidValues.has(oid)) {
 				const type = self.oidValues.get(oid)?.type
