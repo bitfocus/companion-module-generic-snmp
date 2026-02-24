@@ -1,4 +1,4 @@
-import snmp from 'net-snmp'
+// import snmp from 'net-snmp'
 import { generateEngineId } from './oidUtils.js'
 import { ModuleConfig, ModuleSecrets } from './configs.js'
 import {
@@ -15,7 +15,7 @@ export default [
 	 */
 	function pre200(
 		_context: CompanionUpgradeContext<ModuleConfig>,
-		props: CompanionStaticUpgradeProps<ModuleConfig, ModuleSecrets>,
+		_props: CompanionStaticUpgradeProps<ModuleConfig, ModuleSecrets>,
 	): CompanionStaticUpgradeResult<ModuleConfig, ModuleSecrets> {
 		const result: CompanionStaticUpgradeResult<ModuleConfig, ModuleSecrets> = {
 			updatedActions: [],
@@ -23,20 +23,6 @@ export default [
 			updatedFeedbacks: [],
 		}
 
-		for (const action of props.actions) {
-			if (action.actionId === 'setNumber') {
-				if (action.options.type === snmp.ObjectType.Counter32) {
-					action.options.type = snmp.ObjectType.Counter
-				}
-				if (action.options.type === snmp.ObjectType.Gauge32) {
-					action.options.type = snmp.ObjectType.Gauge
-				}
-				if (action.options.type === snmp.ObjectType.Unsigned32) {
-					action.options.type = snmp.ObjectType.Gauge
-				}
-			}
-			result.updatedActions.push(action)
-		}
 		return result
 	},
 	function v210(
@@ -69,7 +55,7 @@ export default [
 		}
 		for (const action of props.actions) {
 			if (action.actionId === 'getOID') {
-				action.options.displaystring ??= false
+				action.options.displaystring ??= { isExpression: false, value: false }
 				result.updatedActions.push(action)
 			}
 		}
@@ -136,9 +122,9 @@ export default [
 
 		for (const feedback of props.feedbacks) {
 			if (feedback.feedbackId === 'getOID') {
-				feedback.options.div ??= 1
-				feedback.options.update ??= true
-				feedback.options.displaystring ??= true
+				feedback.options.div ??= { isExpression: false, value: 1 }
+				feedback.options.update ??= { isExpression: false, value: true }
+				feedback.options.displaystring ??= { isExpression: false, value: true }
 				result.updatedFeedbacks.push(feedback)
 			}
 		}

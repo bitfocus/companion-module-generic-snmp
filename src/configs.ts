@@ -1,7 +1,7 @@
 import { Regex, type SomeCompanionConfigField } from '@companion-module/base'
 import { generateEngineId } from './oidUtils.js'
 
-export interface ModuleConfig {
+export type ModuleConfig = {
 	ip: string
 	port: number
 	trapPort: number
@@ -19,7 +19,7 @@ export interface ModuleConfig {
 	verbose: boolean
 }
 
-export interface ModuleSecrets {
+export type ModuleSecrets = {
 	authKey: string
 	privKey: string
 }
@@ -40,7 +40,7 @@ export default function (): SomeCompanionConfigField[] {
 			width: 6,
 			regex: Regex.IP,
 			default: '127.0.0.1',
-			required: true,
+			minLength: 7,
 		},
 		{
 			type: 'number',
@@ -50,7 +50,6 @@ export default function (): SomeCompanionConfigField[] {
 			min: 1,
 			max: 65535,
 			default: 161,
-			required: true,
 			description: 'Connection will make Get and Set requests to this port',
 		},
 		{
@@ -61,7 +60,6 @@ export default function (): SomeCompanionConfigField[] {
 			min: 1,
 			max: 65535,
 			default: 162,
-			required: true,
 			description: 'Connection will send traps and informs to this port',
 		},
 		{
@@ -92,7 +90,7 @@ export default function (): SomeCompanionConfigField[] {
 			default: '',
 			description: 'Comma seperated list of OIDs to walk on init.',
 			regex: '/^$|^(0|1|2)(\\.(0|[1-9]\\d*))+(?:,\\s*(0|1|2)(\\.(0|[1-9]\\d*))+)*$/',
-			required: false,
+			minLength: 0,
 		},
 		{
 			type: 'static-text',
@@ -184,7 +182,6 @@ export default function (): SomeCompanionConfigField[] {
 			min: 162,
 			max: 65535,
 			default: 162,
-			required: true,
 			isVisibleExpression: `$(options:traps)`,
 			description: 'Connection will bind to this port to listen for SNMP Traps & Informs',
 		},
@@ -196,7 +193,6 @@ export default function (): SomeCompanionConfigField[] {
 			min: 0,
 			max: 3600,
 			default: 0,
-			required: true,
 			description: 'Seconds. Set to 0 to turn polling off.',
 		},
 		{

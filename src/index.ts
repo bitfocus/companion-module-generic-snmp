@@ -1,6 +1,5 @@
 import {
 	InstanceBase,
-	runEntrypoint,
 	InstanceStatus,
 	SomeCompanionConfigField,
 	SharedUdpSocket,
@@ -13,6 +12,7 @@ import type { ModuleConfig, ModuleSecrets } from './configs.js'
 import UpdateActions from './actions.js'
 import UpdateFeedbacks, { FeedbackId } from './feedbacks.js'
 import UpgradeScripts from './upgrades.js'
+import type { InstanceBaseExt, ModuleTypes } from './types.js'
 import { SharedUDPSocketWrapper } from './wrapper.js'
 import { FeedbackOidTracker } from './oidtracker.js'
 import { trimOid, isValidSnmpOid, validateVarbinds } from './oidUtils.js'
@@ -20,7 +20,9 @@ import { throttle, debounce } from 'es-toolkit'
 import dns from 'dns'
 import os from 'os'
 
-export class Generic_SNMP extends InstanceBase<ModuleConfig, ModuleSecrets> {
+export { UpgradeScripts }
+
+export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements InstanceBaseExt {
 	public config!: ModuleConfig
 	private secrets!: ModuleSecrets
 	/** Map of OIDs with their values, uses OID string as key */
@@ -42,7 +44,7 @@ export class Generic_SNMP extends InstanceBase<ModuleConfig, ModuleSecrets> {
 	private listeningSocket!: SharedUdpSocket
 
 	public checkFeedbacks(...feedbackTypes: FeedbackId[]): void {
-		super.checkFeedbacks(...feedbackTypes)
+		super.checkFeedbacks(...(feedbackTypes as [FeedbackId]))
 	}
 
 	constructor(internal: unknown) {
@@ -130,7 +132,7 @@ export class Generic_SNMP extends InstanceBase<ModuleConfig, ModuleSecrets> {
 		}
 
 		if (this.config.interval > 0) {
-			this.pollOids()
+			this.pollOids().catch(() => {})
 		}
 	}
 
@@ -256,8 +258,7 @@ export class Generic_SNMP extends InstanceBase<ModuleConfig, ModuleSecrets> {
 	/**
 	 * Binds to shared UDP socket, creates SNMP Trap reciever
 	 *
-	 * @returns {Promise<void>}
-	 * @throws {Error} If the binding fails
+	 * @throws If the binding fails
 	 */
 
 	async createListener(): Promise<void> {
@@ -576,12 +577,12 @@ export class Generic_SNMP extends InstanceBase<ModuleConfig, ModuleSecrets> {
 			}))
 	}
 
-	pollOids(): void {
-		this.subscribeActions('getOID')
-		this.subscribeFeedbacks('getOID', 'getOIDKnown')
+	async pollOids(): Promise<void> {
+		const oids = this.oidTracker.getOidsToPoll
+		if (oids.length > 0) await this.getOid(oids)
 		if (this.config.interval > 0) {
 			this.pollTimer = setTimeout(() => {
-				this.pollOids()
+				this.pollOids().catch(() => {})
 			}, this.config.interval * 1000)
 		}
 	}
@@ -617,11 +618,11 @@ export class Generic_SNMP extends InstanceBase<ModuleConfig, ModuleSecrets> {
 	}, 20)
 
 	updateActions(): void {
-		UpdateActions(this)
+		this.setActionDefinitions(UpdateActions(this))
 	}
 
 	updateFeedbacks(): void {
-		UpdateFeedbacks(this)
+		this.setFeedbackDefinitions(UpdateFeedbacks(this))
 	}
 
 	/**
@@ -629,9 +630,7 @@ export class Generic_SNMP extends InstanceBase<ModuleConfig, ModuleSecrets> {
 	 */
 
 	debouncedUpdateDefinitions = debounce(() => {
-		//this.updateActions()
+		this.updateActions()
 		this.updateFeedbacks()
 	}, 1000)
 }
-
-runEntrypoint(Generic_SNMP, UpgradeScripts)

@@ -1,24 +1,24 @@
 import { trimOid, isValidSnmpOid } from './oidUtils.js'
-
 /**
  * Manages bidirectional mapping between OIDs and feedback IDs for SNMP trap monitoring.
  * Allows efficient lookup of which feedbacks are watching which OIDs and vice versa.
  */
 export class FeedbackOidTracker {
 	/** Map of OID to Set of feedback IDs watching that OID */
-	oidToFeedbacks: Map<string, Set<string>> = new Map()
+	private oidToFeedbacks: Map<string, Set<string>> = new Map()
 	/** Map of feedback ID to the OID it's watching */
-	feedbackToOid: Map<string, string> = new Map()
+	private feedbackToOid: Map<string, string> = new Map()
+
+	private oidsToPoll: Map<string, Set<string>> = new Map()
 
 	constructor() {}
-
 	/**
 	 * Register a feedback to watch a specific OID
 	 *
 	 * @param feedbackId - The feedback instance ID
 	 * @param oid - The SNMP OID to watch
 	 */
-	addFeedback(feedbackId: string, oid: string): void {
+	addFeedback(feedbackId: string, oid: string, poll: boolean): void {
 		// Remove any existing mapping for this feedback first
 		this.removeFeedback(feedbackId)
 		oid = trimOid(oid)
@@ -34,6 +34,9 @@ export class FeedbackOidTracker {
 
 		// Map feedback ID to OID
 		this.feedbackToOid.set(feedbackId, oid)
+		if (poll) {
+			this.addToPollGroup(oid, feedbackId)
+		}
 	}
 
 	/**
@@ -42,8 +45,8 @@ export class FeedbackOidTracker {
 	 * @param feedbackId - The feedback instance ID
 	 * @param newOid - The new SNMP OID to watch
 	 */
-	updateFeedback(feedbackId: string, newOid: string): void {
-		this.addFeedback(feedbackId, newOid)
+	updateFeedback(feedbackId: string, newOid: string, poll: boolean): void {
+		this.addFeedback(feedbackId, newOid, poll)
 	}
 
 	/**
@@ -69,6 +72,9 @@ export class FeedbackOidTracker {
 
 			// Remove feedback to OID mapping
 			this.feedbackToOid.delete(feedbackId)
+
+			// Remove feedback from polling
+			this.removeFromPollGroup(oldOid, feedbackId)
 		}
 	}
 
@@ -139,5 +145,26 @@ export class FeedbackOidTracker {
 	clear(): void {
 		this.oidToFeedbacks.clear()
 		this.feedbackToOid.clear()
+	}
+
+	addToPollGroup(oid: string, id: string): void {
+		oid = trimOid(oid)
+		if (!isValidSnmpOid(oid) || oid.length == 0) {
+			throw new Error(`Invalid OID: ${oid}`)
+		}
+		if (this.oidsToPoll.has(oid)) this.oidsToPoll.get(oid)?.add(id)
+		else {
+			this.oidsToPoll.set(oid, new Set(id))
+		}
+	}
+
+	removeFromPollGroup(oid: string, id: string): void {
+		oid = trimOid(oid)
+		this.oidsToPoll.get(oid)?.delete(id)
+		if (this.oidsToPoll.get(oid)?.size == 0) this.oidsToPoll.delete(oid)
+	}
+
+	get getOidsToPoll(): string[] {
+		return Object.keys(this.oidsToPoll)
 	}
 }
