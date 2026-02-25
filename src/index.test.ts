@@ -137,14 +137,18 @@ describe('handleVarbind', () => {
 	let instance: Generic_SNMP
 	const handle = (inst: Generic_SNMP, varbind: snmp.Varbind, index = 0) => (inst as any).handleVarbind(varbind, index)
 
-	beforeEach(() => {
+	beforeEach(async () => {
+		vi.useFakeTimers()
 		instance = makeInstance()
 		;(instance as any).config = BASE_CONFIG
 		;(instance as any).secrets = BASE_SECRETS
+		await vi.runAllTimersAsync()
+		;(instance as any).statusManager['setNewStatus'].mock?.mockClear?.()
 	})
 
 	afterEach(() => {
 		;(instance as any).throttledFeedbackIdCheck.cancel()
+		;(instance as any).statusManager.setNewStatus.flush()
 		vi.useRealTimers()
 	})
 

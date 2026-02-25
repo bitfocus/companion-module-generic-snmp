@@ -3,22 +3,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { StatusManager, type Status } from './status.js'
 
 // ---------------------------------------------------------------------------
-// Mocks
-// ---------------------------------------------------------------------------
-
-vi.mock('@companion-module/base', () => ({
-	InstanceStatus: {
-		Ok: 'ok',
-		Disconnected: 'disconnected',
-		BadConfig: 'bad_config',
-		Error: 'error',
-		Warning: 'warning',
-		Connecting: 'connecting',
-		Unknown: 'unknown',
-	},
-}))
-
-// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
