@@ -29,8 +29,6 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	public oidValues: Map<string, snmp.Varbind> = new Map()
 	/** Set of Feedback IDs to be checked after throttle interval */
 	private feedbackIdsToCheck: Set<string> = new Set()
-	/** Set of OIDs to be polled */
-	public pendingOids: Set<string> = new Set()
 	public oidTracker = new FeedbackOidTracker()
 	private snmpQueue = new PQueue({ concurrency: 1, interval: 10, intervalCap: 1 })
 	private agentAddress = '127.0.0.1'
@@ -51,7 +49,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		super(internal)
 	}
 
-	async init(config: ModuleConfig, _isFirstInit: boolean, secrets: ModuleSecrets): Promise<void> {
+	public async init(config: ModuleConfig, _isFirstInit: boolean, secrets: ModuleSecrets): Promise<void> {
 		this.config = config
 		this.secrets = secrets
 		this.updateActions()
@@ -60,7 +58,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		await this.setAgentAddress()
 	}
 
-	async configUpdated(config: ModuleConfig, secrets: ModuleSecrets): Promise<void> {
+	public async configUpdated(config: ModuleConfig, secrets: ModuleSecrets): Promise<void> {
 		this.snmpQueue.clear()
 		this.closeListener()
 
@@ -79,11 +77,10 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		await this.setAgentAddress()
 	}
 
-	async destroy(): Promise<void> {
+	public async destroy(): Promise<void> {
 		this.log('debug', `destroy ${this.id}:${this.label}`)
 		this.snmpQueue.clear()
 		this.throttledFeedbackIdCheck.cancel()
-		this.throttledBatchGet.cancel()
 		this.debouncedUpdateDefinitions.cancel()
 		if (this.pollTimer) {
 			clearTimeout(this.pollTimer)
@@ -93,7 +90,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		this.closeListener()
 	}
 
-	async setAgentAddress(): Promise<void> {
+	private async setAgentAddress(): Promise<void> {
 		return new Promise<void>((resolve) => {
 			dns.lookup(os.hostname(), (err, addr) => {
 				if (err) resolve()
@@ -107,7 +104,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 * Initialize SNMP agent connection, trap listener, and polling
 	 *
 	 */
-	async initializeConnection(): Promise<void> {
+	private async initializeConnection(): Promise<void> {
 		this.connectAgent()
 
 		if (this.config.traps) {
@@ -136,11 +133,11 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		}
 	}
 
-	getConfigFields(): SomeCompanionConfigField[] {
+	public getConfigFields(): SomeCompanionConfigField[] {
 		return GetConfigFields()
 	}
 
-	connectAgent(): void {
+	private connectAgent(): void {
 		this.disconnectAgent()
 
 		if (this.config.ip === undefined || this.config.ip === '') {
@@ -231,14 +228,14 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		this.updateStatus(InstanceStatus.Ok)
 	}
 
-	disconnectAgent(): void {
+	private disconnectAgent(): void {
 		if (this.session) {
 			this.session.close()
 		}
 		this.updateStatus(InstanceStatus.Disconnected)
 	}
 
-	closeListener(): void {
+	private closeListener(): void {
 		if (this.receiver) {
 			this.receiver.close()
 			this.receiver = null
@@ -261,7 +258,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 * @throws If the binding fails
 	 */
 
-	async createListener(): Promise<void> {
+	private async createListener(): Promise<void> {
 		this.closeListener()
 		return new Promise<void>((resolve, reject) => {
 			this.listeningSocket = this.createSharedUdpSocket('udp4')
@@ -318,7 +315,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 *
 	 * @param trap - The trap or inform to process
 	 */
-	processTrap(trap: snmp.Notification): void {
+	private processTrap(trap: snmp.Notification): void {
 		try {
 			if (this.config.verbose) this.log(`debug`, `${snmp.PduType[trap.pdu.type]} recieved`)
 			if (this.config.verbose) this.log('debug', JSON.stringify(trap))
@@ -342,7 +339,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 * @param index - The index of the varbind in its parent array, used for logging
 	 */
 
-	handleVarbind(varbind: snmp.Varbind, index: number): void {
+	private handleVarbind(varbind: snmp.Varbind, index: number): void {
 		if (snmp.isVarbindError(varbind)) {
 			this.log('warn', snmp.varbindError(varbind))
 			return
@@ -381,7 +378,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 * @throws If the OID is invalid or the SNMP set operation fails
 	 */
 
-	async setOid(oid: string, type: snmp.ObjectType, value: snmp.VarbindValue): Promise<void> {
+	public async setOid(oid: string, type: snmp.ObjectType, value: snmp.VarbindValue): Promise<void> {
 		oid = trimOid(oid)
 		if (!isValidSnmpOid(oid) || oid.length == 0) {
 			throw new Error(`Invalid OID: ${oid}`)
@@ -413,7 +410,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 * @throws If the OID is invalid or the SNMP get operation fails
 	 */
 
-	async getOid(oids: string | string[]): Promise<void> {
+	public async getOid(oids: string | string[]): Promise<void> {
 		oids = (Array.isArray(oids) ? oids : [oids]).reduce((acc: string[], oid) => {
 			oid = trimOid(oid)
 			if (!isValidSnmpOid(oid) || oid.length == 0) {
@@ -455,7 +452,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 * @throws {Error} If the OID is invalid or the SNMP walk operation fails
 	 */
 
-	async walk(oid: string): Promise<void> {
+	public async walk(oid: string): Promise<void> {
 		oid = trimOid(oid)
 		if (!isValidSnmpOid(oid) || oid.length == 0) {
 			this.log('warn', `Invalid OID: ${oid}, walk cancelled`)
@@ -489,7 +486,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 * @returns Resolves when the inform is acknowledged, or rejects on error.
 	 */
 
-	async sendInform(typeOrOid: snmp.TrapType | string, ...varbinds: snmp.Varbind[]): Promise<void> {
+	public async sendInform(typeOrOid: snmp.TrapType | string, ...varbinds: snmp.Varbind[]): Promise<void> {
 		return await this.snmpQueue.add(
 			async () => {
 				return new Promise<void>((resolve, reject) => {
@@ -530,7 +527,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 *   to include with the trap. Only used when `typeOrOid` is an OID string.
 	 * @returns Resolves when the trap is sent, or rejects on error.
 	 */
-	async sendTrap(typeOrOid: snmp.TrapType | string, ...varbinds: snmp.Varbind[]): Promise<void> {
+	public async sendTrap(typeOrOid: snmp.TrapType | string, ...varbinds: snmp.Varbind[]): Promise<void> {
 		return await this.snmpQueue.add(
 			async () => {
 				return new Promise<void>((resolve, reject) => {
@@ -568,16 +565,16 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 * one entry per OID key.
 	 * @param types snmp Object types to include in the returned dropdown. If empty all types included
 	 */
-	getOidChoices(...types: snmp.ObjectType[]): DropdownChoice[] {
+	public getOidChoices(...types: snmp.ObjectType[]): DropdownChoice[] {
 		return Array.from(this.oidValues.entries())
 			.filter(([, varbind]) => types.length === 0 || (varbind.type !== undefined && types.includes(varbind.type)))
 			.map(([oid, varbind]) => ({
 				id: oid,
-				label: `${oid} (${snmp.ObjectType[varbind.type!]})`,
+				label: types.length === 1 ? oid : `${oid} (${snmp.ObjectType[varbind.type!]})`,
 			}))
 	}
 
-	async pollOids(): Promise<void> {
+	private async pollOids(): Promise<void> {
 		const oids = this.oidTracker.getOidsToPoll
 		if (oids.length > 0) await this.getOid(oids)
 		if (this.config.interval > 0) {
@@ -587,7 +584,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		}
 	}
 
-	throttledFeedbackIdCheck = throttle(
+	private throttledFeedbackIdCheck = throttle(
 		() => {
 			if (this.config.verbose)
 				this.log('debug', `Checking feedbacks for IDs: ${[...this.feedbackIdsToCheck].join(', ')}`)
@@ -598,30 +595,11 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		{ edges: ['trailing'] },
 	)
 
-	/**
-	 * Throttled function that batches all OIDs accumulated in {@link pendingOids}
-	 * into a single {@link getOid} call. Automatically deduplicates OIDs via the
-	 * underlying Set, ensuring each OID is only fetched once per batch regardless
-	 * of how many actions or feedbacks are subscribed to it.
-	 *
-	 * Should be triggered by subscribe callbacks rather than called directly.
-	 * The throttle window allows all subscribe callbacks to fire and add their
-	 * OIDs before the batch request is dispatched.
-	 *
-	 */
-
-	throttledBatchGet = throttle(async () => {
-		if (this.pendingOids.size === 0) return
-		const oids = Array.from(this.pendingOids)
-		this.pendingOids.clear()
-		await this.getOid(oids)
-	}, 20)
-
-	updateActions(): void {
+	private updateActions(): void {
 		this.setActionDefinitions(UpdateActions(this))
 	}
 
-	updateFeedbacks(): void {
+	private updateFeedbacks(): void {
 		this.setFeedbackDefinitions(UpdateFeedbacks(this))
 	}
 
@@ -629,7 +607,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 * Debounced function that updates action and feedback definitions.
 	 */
 
-	debouncedUpdateDefinitions = debounce(() => {
+	private debouncedUpdateDefinitions = debounce(() => {
 		this.updateActions()
 		this.updateFeedbacks()
 	}, 1000)

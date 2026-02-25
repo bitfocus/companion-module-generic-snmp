@@ -16,6 +16,5 @@ export interface ModuleTypes {
 export interface InstanceBaseExt extends InstanceBase<ModuleTypes> {
 	config: ModuleConfig
 	oidValues: Map<string, snmp.Varbind>
-	pendingOids: Set<string>
 	oidTracker: FeedbackOidTracker
 }
