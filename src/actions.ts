@@ -15,6 +15,7 @@ import {
 	ObjectTypeHints,
 	TrapTypeHints,
 	OidDropdownOptions,
+	OidOption,
 } from './options.js'
 import snmp from 'net-snmp'
 
@@ -26,6 +27,7 @@ export enum ActionId {
 	SetOpaque = 'setOpaque',
 	SetOID = 'setOID',
 	GetOID = 'getOID',
+	WalkOID = 'walkOID',
 	TrapOrInform = 'trapOrInform',
 }
 
@@ -78,6 +80,11 @@ export type ActionSchema = {
 			update: boolean
 			displaystring: boolean
 			div: number
+		}
+	}
+	[ActionId.WalkOID]: {
+		options: {
+			oid: string
 		}
 	}
 	[ActionId.TrapOrInform]: {
@@ -414,6 +421,21 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${action.id}`)
 			await self.getOid(oid)
 			return undefined
+		},
+	}
+
+	actionDefs[ActionId.WalkOID] = {
+		name: 'Walk MIB starting from OID',
+		options: [
+			{
+				...OidOption,
+				description: `Walk MIB from this OID. Returned Varbinds cached.`,
+			},
+		],
+		callback: async ({ id, options }, _context) => {
+			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
+			await self.walk(oid)
 		},
 	}
 

@@ -62,6 +62,7 @@ You can perform the following actions with this module:
 - Set OID value to an IP Address
 - Set OID value to an OID
 - Set OID value to an Opaque
+- Walk MIB starting from OID
 
 ## Feedbacks
 
