@@ -13,10 +13,11 @@ const UINT64_MAX = 18446744073709551615n
  */
 
 export const trimOid = (oid: string): string => {
+	oid = oid.trim()
 	while (oid.startsWith('.')) {
 		oid = oid.substring(1)
 	}
-	return oid.trim()
+	return oid
 }
 
 /**

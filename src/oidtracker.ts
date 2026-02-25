@@ -154,7 +154,7 @@ export class FeedbackOidTracker {
 		}
 		if (this.oidsToPoll.has(oid)) this.oidsToPoll.get(oid)?.add(id)
 		else {
-			this.oidsToPoll.set(oid, new Set(id))
+			this.oidsToPoll.set(oid, new Set([id]))
 		}
 	}
 
@@ -165,6 +165,6 @@ export class FeedbackOidTracker {
 	}
 
 	get getOidsToPoll(): string[] {
-		return Object.keys(this.oidsToPoll)
+		return Array.from(this.oidsToPoll.keys())
 	}
 }
