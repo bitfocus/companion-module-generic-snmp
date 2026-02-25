@@ -91,6 +91,7 @@ export default function (): SomeCompanionConfigField[] {
 			description: 'Comma seperated list of OIDs to walk on init.',
 			regex: '/^$|^(0|1|2)(\\.(0|[1-9]\\d*))+(?:,\\s*(0|1|2)(\\.(0|[1-9]\\d*))+)*$/',
 			minLength: 0,
+			multiline: true,
 		},
 		{
 			type: 'static-text',

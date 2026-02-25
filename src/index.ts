@@ -12,6 +12,7 @@ import type { ModuleConfig, ModuleSecrets } from './configs.js'
 import UpdateActions from './actions.js'
 import UpdateFeedbacks, { FeedbackId } from './feedbacks.js'
 import UpgradeScripts from './upgrades.js'
+import { StatusManager } from './status.js'
 import type { InstanceBaseExt, ModuleTypes } from './types.js'
 import { SharedUDPSocketWrapper } from './wrapper.js'
 import { FeedbackOidTracker } from './oidtracker.js'
@@ -25,6 +26,8 @@ export { UpgradeScripts }
 export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements InstanceBaseExt {
 	public config!: ModuleConfig
 	private secrets!: ModuleSecrets
+
+	private statusManager = new StatusManager(this, { status: InstanceStatus.Connecting, message: 'Initialising' }, 2000)
 	/** Map of OIDs with their values, uses OID string as key */
 	public oidValues: Map<string, snmp.Varbind> = new Map()
 	/** Set of Feedback IDs to be checked after throttle interval */
@@ -79,6 +82,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 
 	public async destroy(): Promise<void> {
 		this.log('debug', `destroy ${this.id}:${this.label}`)
+		this.statusManager.destroy()
 		this.snmpQueue.clear()
 		this.throttledFeedbackIdCheck.cancel()
 		this.debouncedUpdateDefinitions.cancel()
@@ -142,7 +146,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 
 		if (this.config.ip === undefined || this.config.ip === '') {
 			this.log('warn', 'Please configure your instance')
-			this.updateStatus(InstanceStatus.BadConfig, 'Missing configuration')
+			this.statusManager.updateStatus(InstanceStatus.BadConfig, 'Missing configuration')
 			return
 		}
 
@@ -156,25 +160,25 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 
 			if (this.config.community === undefined || this.config.community === '') {
 				this.log('warn', 'When using SNMP v1 or v2c please specify a community.')
-				this.updateStatus(InstanceStatus.BadConfig, 'Missing community')
+				this.statusManager.updateStatus(InstanceStatus.BadConfig, 'Missing community')
 				return
 			}
 
 			this.session = snmp.createSession(this.config.ip, this.config.community, options)
-			this.updateStatus(InstanceStatus.Ok)
+			this.statusManager.updateStatus(InstanceStatus.Ok)
 			return
 		}
 
 		// create v3 session
 		if (this.config.engineID === undefined || this.config.engineID === '') {
 			this.log('warn', 'When using SNMP v3 please specify an Engine ID.')
-			this.updateStatus(InstanceStatus.BadConfig, 'Missing Engine ID')
+			this.statusManager.updateStatus(InstanceStatus.BadConfig, 'Missing Engine ID')
 			return
 		}
 
 		if (this.config.username === undefined || this.config.username === '') {
 			this.log('warn', 'When using SNMP v3 please specify a User Name.')
-			this.updateStatus(InstanceStatus.BadConfig, 'Missing User Name')
+			this.statusManager.updateStatus(InstanceStatus.BadConfig, 'Missing User Name')
 			return
 		}
 
@@ -198,7 +202,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		if (this.config.securityLevel !== 'noAuthNoPriv') {
 			if (this.secrets.authKey === undefined || this.secrets.authKey === '') {
 				this.log('warn', 'please specify an Auth Key when Security level is authNoPriv or authPriv.')
-				this.updateStatus(InstanceStatus.BadConfig, 'Missing Auth Key')
+				this.statusManager.updateStatus(InstanceStatus.BadConfig, 'Missing Auth Key')
 				return
 			}
 
@@ -208,7 +212,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 			if (this.config.securityLevel == 'authPriv') {
 				if (this.secrets.privKey === undefined || this.secrets.privKey === '') {
 					this.log('warn', 'Please specify a Priv Key when Security level is authPriv.')
-					this.updateStatus(InstanceStatus.BadConfig, 'Missing Priv Key')
+					this.statusManager.updateStatus(InstanceStatus.BadConfig, 'Missing Priv Key')
 					return
 				}
 				if (!process.execArgv.includes('--openssl-legacy-provider') && this.config.privProtocol == 'des') {
@@ -216,7 +220,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 						'error',
 						`Process running without --openssl-legacy-provider flag.\nDES priv protocol cannot be used. Note: Only supported in Companion v4.2.5 or later`,
 					)
-					this.updateStatus(InstanceStatus.BadConfig, 'Insufficient Permissions')
+					this.statusManager.updateStatus(InstanceStatus.BadConfig, 'Insufficient Permissions')
 					return
 				}
 				user.privProtocol = snmp.PrivProtocols[this.config.privProtocol]
@@ -225,14 +229,14 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		}
 
 		this.session = snmp.createV3Session(this.config.ip, user, options)
-		this.updateStatus(InstanceStatus.Ok)
+		this.statusManager.updateStatus(InstanceStatus.Ok)
 	}
 
 	private disconnectAgent(): void {
 		if (this.session) {
 			this.session.close()
 		}
-		this.updateStatus(InstanceStatus.Disconnected)
+		this.statusManager.updateStatus(InstanceStatus.Disconnected)
 	}
 
 	private closeListener(): void {
