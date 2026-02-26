@@ -126,7 +126,7 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 				choices: self.getOidChoices(snmp.ObjectType.OctetString),
 				default: self.getOidChoices(snmp.ObjectType.OctetString)[0]?.id ?? '',
 			},
-			ValueOption,
+			{ ...ValueOption, multiline: true },
 		],
 		callback: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)

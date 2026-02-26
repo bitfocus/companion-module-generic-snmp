@@ -4,7 +4,6 @@ import {
 	type CompanionInputFieldStaticText,
 	type CompanionInputFieldTextInput,
 	type CompanionInputFieldNumber,
-	Regex,
 } from '@companion-module/base'
 import snmp from 'net-snmp'
 
@@ -34,7 +33,7 @@ export const ValueOption = {
 	label: 'Value',
 	id: 'value',
 	default: '',
-	regex: Regex.SOMETHING,
+	minLength: 0,
 	useVariables: true,
 } as const satisfies CompanionInputFieldTextInput
 
