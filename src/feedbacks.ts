@@ -35,7 +35,7 @@ export default function (self: Generic_SNMP): CompanionFeedbackDefinitions<Feedb
 			DivisorOption,
 			DisplayStringOption,
 			{ ...EncodingOption, description: `Encoding method used for Opaque / Buffer values` },
-			UpdateOption,
+			{ ...UpdateOption, default: true },
 		],
 		callback: async (feedback, _context) => {
 			const oid = trimOid(feedback.options.oid)
