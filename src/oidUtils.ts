@@ -1,3 +1,4 @@
+import { JsonPrimitive } from '@companion-module/base'
 import snmp from 'net-snmp'
 import { randomBytes } from 'node:crypto'
 
@@ -178,13 +179,12 @@ export function prepareVarbindForVariableAssignment(
 	displayString = false,
 	divisor = 1,
 	encoding: BufferEncoding = 'base64',
-): string | number | boolean | null {
+): JsonPrimitive {
 	const value = varbind.value
 	if (typeof value == 'number') return value / divisor
 	if (varbind.type == snmp.ObjectType.OctetString && displayString) return value?.toLocaleString() ?? ''
 	if (varbind.type == snmp.ObjectType.Counter64 && Buffer.isBuffer(value)) return bufferToBigInt(value).toString()
 	if (typeof value == 'bigint') return value.toString()
-	if (varbind.type == snmp.ObjectType.Opaque && Buffer.isBuffer(value)) return value.toString(encoding)
 	if (Buffer.isBuffer(value)) return value.toString(encoding)
 
 	return value || null
