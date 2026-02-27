@@ -152,10 +152,14 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			await self.getOid(oid)
 			if (self.oidValues.has(oid)) {
 				const type = self.oidValues.get(oid)?.type
-				if (type == snmp.ObjectType.OctetString)
+				if (type == snmp.ObjectType.OctetString) {
+					const OctetString = Buffer.isBuffer(self.oidValues.get(oid)?.value)
+						? (self.oidValues.get(oid)?.value as Buffer).toString(options.encoding)
+						: String(self.oidValues.get(oid)?.value)
 					return {
-						value: String(self.oidValues.get(oid)?.value),
+						value: OctetString,
 					}
+				}
 			}
 			return undefined
 		},
