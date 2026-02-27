@@ -156,6 +156,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 				port: this.config.port,
 				version: this.config.version === 'v1' ? snmp.Version1 : snmp.Version2c,
 				trapPort: this.config.trapPort ?? 162,
+				timeout: 5000,
 			}
 
 			if (this.config.community === undefined || this.config.community === '') {
@@ -186,6 +187,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 			port: this.config.port,
 			engineID: this.config.engineID,
 			version: snmp.Version3,
+			timeout: 5000,
 		}
 		const user: {
 			name: string
