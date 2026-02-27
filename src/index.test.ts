@@ -271,11 +271,11 @@ describe('getOid', () => {
 		expect(session.get).toHaveBeenCalledWith(['1.3.6.1.1'], expect.any(Function))
 	})
 
-	it('accepts an array of OIDs', async () => {
+	it('accepts a spread array of OIDs', async () => {
 		session.get.mockImplementation((_oids: string[], cb: (err: Error | null, varbinds: snmp.Varbind[]) => void) =>
 			cb(null, []),
 		)
-		await instance.getOid(['1.3.6.1.1', '1.3.6.1.2'])
+		await instance.getOid(...['1.3.6.1.1', '1.3.6.1.2'])
 		expect(session.get).toHaveBeenCalledWith(['1.3.6.1.1', '1.3.6.1.2'], expect.any(Function))
 	})
 
@@ -283,7 +283,7 @@ describe('getOid', () => {
 		session.get.mockImplementation((_oids: string[], cb: (err: Error | null, varbinds: snmp.Varbind[]) => void) =>
 			cb(null, []),
 		)
-		await instance.getOid(['1.3.6.1.1', 'bad-oid'])
+		await instance.getOid(...['1.3.6.1.1', 'bad-oid'])
 		expect(session.get).toHaveBeenCalledWith(['1.3.6.1.1'], expect.any(Function))
 		expect(instance.log).toHaveBeenCalledWith('warn', expect.stringContaining('bad-oid'))
 	})

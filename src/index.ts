@@ -414,8 +414,8 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 * @throws If the OID is invalid or the SNMP get operation fails
 	 */
 
-	public async getOid(oids: string | string[]): Promise<void> {
-		oids = (Array.isArray(oids) ? oids : [oids]).reduce((acc: string[], oid) => {
+	public async getOid(...oids: string[]): Promise<void> {
+		oids = oids.reduce((acc: string[], oid) => {
 			oid = trimOid(oid)
 			if (!isValidSnmpOid(oid) || oid.length == 0) {
 				this.log('warn', `Invalid OID skipped: ${oid}`)
@@ -580,7 +580,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 
 	private async pollOids(): Promise<void> {
 		const oids = this.oidTracker.getOidsToPoll
-		if (oids.length > 0) await this.getOid(oids)
+		if (oids.length > 0) await this.getOid(...oids)
 		if (this.config.interval > 0) {
 			this.pollTimer = setTimeout(() => {
 				this.pollOids().catch(() => {})
