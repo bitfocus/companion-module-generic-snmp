@@ -282,12 +282,8 @@ describe('validateVarbinds', () => {
 		const varbinds = [
 			{ oid: '1.3.6.1', type: snmp.ObjectType.Integer, value: '5' },
 			{ oid: '1.3.6.2', type: snmp.ObjectType.OctetString, value: 'Since I cannot prove a lover…' },
-			{ oid: '1.3.6.2', type: snmp.ObjectType.Opaque, value: Buffer.from('I am determined to prove a villain.') },
-			{
-				oid: '1.3.6.3',
-				type: snmp.ObjectType.Opaque,
-				value: 'A thing devised by the enemy',
-			},
+			{ oid: '1.3.6.3', type: snmp.ObjectType.OctetString, value: Buffer.from('I am determined to prove a villain.') },
+			{ oid: '1.3.6.4', type: snmp.ObjectType.Opaque, value: 'A thing devised by the enemy' },
 		] as snmp.Varbind[]
 
 		const result = validateVarbinds(varbinds)

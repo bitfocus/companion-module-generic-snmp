@@ -85,7 +85,7 @@ export const validateAndConvertVarbind = (varbind: snmp.Varbind): snmp.Varbind =
 
 		case snmp.ObjectType.BitString:
 		case snmp.ObjectType.OctetString: {
-			value = raw
+			value = Buffer.isBuffer(varbind.value) ? varbind.value : raw
 			break
 		}
 		case snmp.ObjectType.Opaque: {

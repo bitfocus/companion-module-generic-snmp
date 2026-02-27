@@ -37,6 +37,7 @@ export type ActionSchema = {
 		options: {
 			oid: string
 			value: string
+			encoding: BufferEncoding
 		}
 	}
 	[ActionId.SetOpaque]: {
@@ -131,11 +132,12 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 				default: self.getOidChoices(snmp.ObjectType.OctetString)[0]?.id ?? '',
 			},
 			{ ...ValueOption, multiline: true },
+			EncodingOption,
 		],
 		callback: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
-			await self.setOid(oid, snmp.ObjectType.OctetString, options.value)
+			await self.setOid(oid, snmp.ObjectType.OctetString, Buffer.from(options.value, options.encoding))
 		},
 		learn: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
