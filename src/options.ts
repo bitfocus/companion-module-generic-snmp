@@ -62,13 +62,13 @@ export const DivisorOption = {
 	max: Number.MAX_SAFE_INTEGER,
 	step: 1,
 	description:
-		'If OID returns a number, value will be divided by this value. Ie use `100` to achieve 2 decimal precision. Does not work with Counter64 type VarBinds.',
+		'If OID value is number, divide the raw OID value by this number. Use `10` for 1 decimal place, `100` for 2, `1000` for 3, etc. Does not work with Counter64 type VarBinds.',
 } as const satisfies CompanionInputFieldNumber
 
 export const EncodingOption = {
 	type: 'dropdown',
 	id: 'encoding',
-	label: 'Encoding Options',
+	label: 'Encoding',
 	choices: [
 		{ id: 'utf8', label: 'UTF-8' },
 		{ id: 'ascii', label: 'ASCII' },
