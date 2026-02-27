@@ -108,6 +108,11 @@ describe('bufferToBigInt', () => {
 		const buf = Buffer.from([0x00, 0x00])
 		expect(bufferToBigInt(buf)).toBe(0n)
 	})
+
+	it('handles an empty buffer', () => {
+		const buf = Buffer.from([])
+		expect(bufferToBigInt(buf)).toBe(0n)
+	})
 })
 
 // ---------------------------------------------------------------------------
@@ -129,11 +134,11 @@ describe('validateAndConvertVarbind', () => {
 
 	// Boolean
 	describe('Boolean', () => {
-		it.each([['true'], ['1'], ['on'], ['yes'], ['TRUE'], ['YES']])('converts "%s" to true', (raw) => {
+		it.each([['true'], ['1'], ['on'], ['yes'], ['TRUE'], ['YES'], [true]])('converts "%s" to true', (raw) => {
 			expect(validateAndConvertVarbind(varbind(snmp.ObjectType.Boolean, raw)).value).toBe(true)
 		})
 
-		it.each([['false'], ['0'], ['off'], ['no']])('converts "%s" to false', (raw) => {
+		it.each([['false'], ['0'], ['off'], ['no'], [false]])('converts "%s" to false', (raw) => {
 			expect(validateAndConvertVarbind(varbind(snmp.ObjectType.Boolean, raw)).value).toBe(false)
 		})
 
@@ -156,6 +161,10 @@ describe('validateAndConvertVarbind', () => {
 
 		it('converts a hex integer string', () => {
 			expect(validateAndConvertVarbind(varbind(snmp.ObjectType.Integer, '0xFF')).value).toBe(255)
+		})
+
+		it('passes an integer', () => {
+			expect(validateAndConvertVarbind(varbind(snmp.ObjectType.Integer, 2001)).value).toBe(2001)
 		})
 
 		it('throws when value is not a valid integer', () => {
@@ -225,6 +234,10 @@ describe('validateAndConvertVarbind', () => {
 	describe('Counter/Gauge/TimeTicks', () => {
 		it('converts a valid unsigned 32-bit value', () => {
 			expect(validateAndConvertVarbind(varbind(snmp.ObjectType.Counter, '100')).value).toBe(100)
+		})
+
+		it('passes a valid unsigned 32-bit value', () => {
+			expect(validateAndConvertVarbind(varbind(snmp.ObjectType.Counter, 3030)).value).toBe(3030)
 		})
 
 		it('throws on a negative value', () => {

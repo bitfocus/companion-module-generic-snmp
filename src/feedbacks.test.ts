@@ -13,6 +13,7 @@ vi.mock('./options.js', () => ({
 	DivisorOption: { type: 'number', id: 'div', label: 'Divisor', default: 1 },
 	DisplayStringOption: { type: 'checkbox', id: 'displaystring', label: 'Display String', default: false },
 	UpdateOption: { type: 'checkbox', id: 'update', label: 'Update', default: false },
+	EncodingOption: { type: 'dropdown', id: 'encoding', label: 'Encoding Options', choices: [], default: 'base64' },
 }))
 
 // ---------------------------------------------------------------------------

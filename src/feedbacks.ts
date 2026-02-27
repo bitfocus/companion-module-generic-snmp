@@ -1,5 +1,5 @@
 import type Generic_SNMP from './index.js'
-import { DisplayStringOption, UpdateOption, DivisorOption, OidDropdownOptions } from './options.js'
+import { DisplayStringOption, UpdateOption, DivisorOption, OidDropdownOptions, EncodingOption } from './options.js'
 import { prepareVarbindForVariableAssignment, isValidSnmpOid, trimOid } from './oidUtils.js'
 import type { CompanionFeedbackDefinitions } from '@companion-module/base'
 // import snmp from 'net-snmp'
@@ -16,6 +16,7 @@ export type FeedbackSchema = {
 			div: number
 			displaystring: boolean
 			update: boolean
+			encoding: BufferEncoding
 		}
 	}
 }
@@ -33,6 +34,7 @@ export default function (self: Generic_SNMP): CompanionFeedbackDefinitions<Feedb
 			},
 			DivisorOption,
 			DisplayStringOption,
+			{ ...EncodingOption, description: `Encoding method used for Opaque / Buffer values` },
 			UpdateOption,
 		],
 		callback: async (feedback, _context) => {
@@ -46,7 +48,12 @@ export default function (self: Generic_SNMP): CompanionFeedbackDefinitions<Feedb
 			const varbind = self.oidValues.get(oid)
 			if (varbind == undefined || varbind.value === undefined)
 				throw new Error(`Varbind not found or has no value, can't update local variable feedback ${feedback.id}`)
-			return prepareVarbindForVariableAssignment(varbind, feedback.options.displaystring, feedback.options.div)
+			return prepareVarbindForVariableAssignment(
+				varbind,
+				feedback.options.displaystring,
+				feedback.options.div,
+				feedback.options.encoding,
+			)
 		},
 		learn: async (feedback, _context) => {
 			const oid = trimOid(feedback.options.oid)

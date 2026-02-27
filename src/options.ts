@@ -65,6 +65,22 @@ export const DivisorOption = {
 		'If OID returns a number, value will be divided by this value. Ie use `100` to achieve 2 decimal precision. Does not work with Counter64 type VarBinds.',
 } as const satisfies CompanionInputFieldNumber
 
+export const EncodingOption = {
+	type: 'dropdown',
+	id: 'encoding',
+	label: 'Encoding Options',
+	choices: [
+		{ id: 'utf8', label: 'UTF-8' },
+		{ id: 'ascii', label: 'ASCII' },
+		{ id: 'base64', label: 'Base64' },
+		{ id: 'base64url', label: 'Base64 URL' },
+		{ id: 'hex', label: 'Hex' },
+		{ id: 'latin1', label: 'Latin-1 / Binary' },
+		{ id: 'utf16le', label: 'UTF-16 LE' },
+	],
+	default: 'utf8',
+} as const satisfies CompanionInputFieldDropdown
+
 export const TrapOrInformOption = {
 	type: 'dropdown',
 	id: 'messageType',
@@ -289,7 +305,7 @@ export const ObjectTypeHints = [
 		type: 'static-text',
 		id: 'hint_opaque',
 		label: 'Accepted values',
-		value: 'Buffer encoded as Base64 string. Will be padded as necessary.',
+		value: 'String will be converted to a buffer with the selected encoding type',
 		isVisibleExpression: `${enterpriseSpecific} && $(options:objectType) == ${snmp.ObjectType.Opaque}`,
 		disableAutoExpression: true,
 	},

@@ -23,6 +23,7 @@ vi.mock('./options.js', () => ({
 	TrapTypeHints: [],
 	OidDropdownOptions: { type: 'textinput', id: 'oid', label: 'OID' },
 	OidOption: { type: 'textinput', id: 'oid', label: 'OID' },
+	EncodingOption: { type: 'dropdown', id: 'encoding', label: 'Encoding Options', choices: [], default: 'base64' },
 }))
 
 // ---------------------------------------------------------------------------
@@ -183,8 +184,8 @@ describe(`${ActionId.SetOpaque} callback`, () => {
 	})
 
 	it('calls setOid with Opaque type', async () => {
-		await runCallback(self, ActionId.SetOpaque, { oid: VALID_OID, value: 'SGVsbG8=' })
-		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.Opaque, 'SGVsbG8=')
+		await runCallback(self, ActionId.SetOpaque, { oid: VALID_OID, value: 'SGVsbG8=', encoding: 'base64' })
+		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.Opaque, Buffer.from('SGVsbG8=', 'base64'))
 	})
 
 	it('throws on invalid OID', async () => {
@@ -440,21 +441,23 @@ describe(`${ActionId.GetOID} callback`, () => {
 		expect(context.setCustomVariableValue).toHaveBeenCalledWith('myVar', 25)
 	})
 
-	it('does not call setCustomVariableValue when variable is empty', async () => {
+	it('Throws error when setCustomVariableValue when variable is empty', async () => {
 		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 } as any)
-		await runCallback(
-			self,
-			ActionId.GetOID,
-			{
-				oid: VALID_OID,
-				variable: '',
-				update: false,
-				displaystring: false,
-				div: 1,
-			},
-			context,
-		)
-		expect(context.setCustomVariableValue).not.toHaveBeenCalled()
+		await expect(
+			runCallback(
+				self,
+				ActionId.GetOID,
+				{
+					oid: VALID_OID,
+					variable: '',
+					update: false,
+					displaystring: false,
+					div: 1,
+					encoding: 'base64',
+				},
+				context,
+			),
+		).rejects.toThrow(/No variable/)
 	})
 
 	it('throws when varbind is not found after get', async () => {
@@ -554,6 +557,7 @@ describe(`${ActionId.TrapOrInform} callback — generic trap types`, () => {
 			oidVarbind: VALID_OID,
 			objectType: snmp.ObjectType.Integer,
 			objectValue: '1',
+			encoding: 'base64',
 		})
 		expect(self.sendTrap).toHaveBeenCalledWith(snmp.TrapType.ColdStart)
 		expect(self.sendInform).not.toHaveBeenCalled()
@@ -567,6 +571,7 @@ describe(`${ActionId.TrapOrInform} callback — generic trap types`, () => {
 			oidVarbind: VALID_OID,
 			objectType: snmp.ObjectType.Integer,
 			objectValue: '1',
+			encoding: 'base64',
 		})
 		expect(self.sendInform).toHaveBeenCalledWith(snmp.TrapType.LinkUp)
 		expect(self.sendTrap).not.toHaveBeenCalled()
@@ -589,6 +594,7 @@ describe(`${ActionId.TrapOrInform} callback — enterprise-specific`, () => {
 		oidVarbind: VALID_OID,
 		objectType: snmp.ObjectType.Integer,
 		objectValue: '42',
+		encoding: 'hex',
 	}
 
 	it('calls sendTrap with enterprise OID and varbind', async () => {

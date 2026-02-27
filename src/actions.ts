@@ -8,6 +8,7 @@ import {
 	DisplayStringOption,
 	TrapOrInformOption,
 	TrapOrOidOption,
+	EncodingOption,
 	EnterpriseOidOption,
 	VarbindOidOption,
 	ObjectTypeOptions,
@@ -42,6 +43,7 @@ export type ActionSchema = {
 		options: {
 			oid: string
 			value: string
+			encoding: BufferEncoding
 		}
 	}
 	[ActionId.SetNumber]: {
@@ -80,6 +82,7 @@ export type ActionSchema = {
 			update: boolean
 			displaystring: boolean
 			div: number
+			encoding: BufferEncoding
 		}
 	}
 	[ActionId.WalkOID]: {
@@ -96,6 +99,7 @@ export type ActionSchema = {
 			oidVarbind: string
 			objectType: snmp.ObjectType
 			objectValue: string
+			encoding: BufferEncoding
 			hint_boolean: never
 			hint_integer: never
 			hint_counter: never
@@ -157,14 +161,20 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			},
 			{
 				...ValueOption,
-				regex: '/^(?:\\$\\([a-zA-Z0-9\\-_.]+:[a-zA-Z0-9\\-_.]+\\)|[A-Za-z0-9+/]*={0,2})$/',
-				description: 'Enter the value as a base64 encoded string (e.g. SGVsbG8gV29ybGQ=)',
 			},
+			EncodingOption,
 		],
 		callback: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
+			let opaqueBuffer: Buffer
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
-			await self.setOid(oid, snmp.ObjectType.Opaque, options.value)
+
+			try {
+				opaqueBuffer = Buffer.from(options.value, options.encoding)
+			} catch {
+				throw new Error(`Value "${options.value}" is not valid for encoding ${options.encoding}`)
+			}
+			await self.setOid(oid, snmp.ObjectType.Opaque, opaqueBuffer)
 		},
 	}
 	actionDefs[ActionId.SetNumber] = {
@@ -395,19 +405,24 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			},
 			DisplayStringOption,
 			DivisorOption,
+			EncodingOption,
 		],
 		callback: async (action, context) => {
+			if (!action.options.variable) throw new Error(`No variable selected: ${action.id}`)
 			const oid = trimOid(action.options.oid)
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${action.id}`)
 			await self.getOid(oid)
 			const varbind = self.oidValues.get(oid)
 			if (varbind == undefined || varbind.value === undefined)
 				throw new Error(`Varbind not found, can't update custom variable ${action.options.variable}`)
-			if (action.options.variable)
-				context.setCustomVariableValue(
-					action.options.variable,
-					prepareVarbindForVariableAssignment(varbind, action.options.displaystring, action.options.div) ?? '',
-				)
+			const value =
+				prepareVarbindForVariableAssignment(
+					varbind,
+					action.options.displaystring,
+					action.options.div,
+					action.options.encoding,
+				) ?? ''
+			context.setCustomVariableValue(action.options.variable, value)
 		},
 		subscribe: async (action, _context) => {
 			const oid = trimOid(action.options.oid)
@@ -456,11 +471,15 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			VarbindOidOption,
 			ObjectTypeOptions,
 			ObjectValueOption,
+			{
+				...EncodingOption,
+				isVisibleExpression: `$(options:trapType) == ${snmp.TrapType.EnterpriseSpecific} && $(options:objectType) == ${snmp.ObjectType.Opaque}`,
+			},
 			...ObjectTypeHints,
 			...TrapTypeHints,
 		],
 		callback: async ({ id, options }, _context) => {
-			const { messageType, trapType, oidEnterprise, oidVarbind, objectType, objectValue } = options
+			const { messageType, trapType, oidEnterprise, oidVarbind, objectType, objectValue, encoding } = options
 			if (trapType !== snmp.TrapType.EnterpriseSpecific) {
 				switch (messageType) {
 					case 'inform':
@@ -473,10 +492,11 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			}
 			const oid = trimOid(oidVarbind)
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
+			const varbindValue = objectType == snmp.ObjectType.Opaque ? Buffer.from(objectValue, encoding) : objectValue
 			const VarBind: snmp.Varbind = {
 				oid: trimOid(oidVarbind),
 				type: objectType,
-				value: objectValue,
+				value: varbindValue,
 			}
 			switch (messageType) {
 				case 'inform':

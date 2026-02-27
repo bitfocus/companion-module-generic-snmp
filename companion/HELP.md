@@ -50,7 +50,7 @@ You can perform the following actions with this module:
   - `OctetString` may be converted to `DisplayString`
   - Numeric values may be divided by the `Scaling Divisor` field to achieved fixed precision decimal values
   - `Counter64` OIDs returned as strings
-  - `Opaque` OIDs returned as `base64` strings
+  - `Opaque` OIDs returned as strings with selectable encoding
 - Send Trap or Inform message
 - Set OID value to an OctetString
 - Set OID value to a Number. This includes the following SNMP Object Types:
@@ -72,4 +72,4 @@ You can perform the following actions with this module:
   - `OctetString` may be converted to `DisplayString`
   - Numeric values may be divided by the `Scaling Divisor` field to achieved fixed precision decimal values
   - `Counter64` OIDs returned as strings
-  - `Opaque` OIDs returned as `base64` strings
+  - `Opaque` OIDs returned as strings with selectable encoding
