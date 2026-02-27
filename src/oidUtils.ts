@@ -36,8 +36,9 @@ export const isValidSnmpOid = (value: string): boolean => /^(0|1|2)(\.(0|[1-9]\d
  * @returns The buffer converted to a BigInt
  */
 export const bufferToBigInt = (buffer: Buffer, start = 0, end = buffer.length): bigint => {
-	const bufferAsHexString = buffer.slice(start, end).toString('hex')
-	return BigInt(`0x${bufferAsHexString}`)
+	const slice = buffer.slice(start, end)
+	if (slice.length === 0) return 0n
+	return BigInt(`0x${slice.toString('hex')}`)
 }
 
 /**
@@ -61,16 +62,19 @@ export const validateAndConvertVarbind = (varbind: snmp.Varbind): snmp.Varbind =
 
 	switch (type) {
 		case snmp.ObjectType.Boolean: {
-			raw = raw.toLowerCase().trim()
-			if (raw === 'true' || raw === '1' || raw === 'on' || raw === 'yes') value = true
-			else if (raw === 'false' || raw === '0' || raw === 'off' || raw === 'no') value = false
-			else throw new Error(`Cannot convert "${raw}" to Boolean — expected true/false, 1/0, on/off, yes/no`)
+			if (typeof varbind.value == 'boolean') value = varbind.value
+			else {
+				raw = raw.toLowerCase().trim()
+				if (raw === 'true' || raw === '1' || raw === 'on' || raw === 'yes') value = true
+				else if (raw === 'false' || raw === '0' || raw === 'off' || raw === 'no') value = false
+				else throw new Error(`Cannot convert "${raw}" to Boolean — expected true/false, 1/0, on/off, yes/no`)
+			}
 			break
 		}
-
 		case snmp.ObjectType.Integer: {
 			const isHex = /^-?0x[0-9a-fA-F]+$/i.test(raw.trim())
-			const n = isHex ? Number.parseInt(raw, 16) : Number.parseInt(raw, 10)
+			const n =
+				typeof varbind.value == 'number' ? varbind.value : isHex ? Number.parseInt(raw, 16) : Number.parseInt(raw, 10)
 			if (Number.isNaN(n) || (!isHex && String(n) !== raw.trim())) throw new Error(`Cannot convert "${raw}" to Integer`)
 			if (n < INT32_MIN || n > INT32_MAX)
 				throw new Error(`Integer value ${n} is out of range [${INT32_MIN}, ${INT32_MAX}]`)
@@ -84,11 +88,11 @@ export const validateAndConvertVarbind = (varbind: snmp.Varbind): snmp.Varbind =
 			break
 		}
 		case snmp.ObjectType.Opaque: {
-			const padded = raw.trim().padEnd(Math.ceil(raw.trim().length / 4) * 4, '=')
-			if (!/^[A-Za-z0-9+/]*={0,2}$/.test(padded)) {
-				throw new Error(`Cannot convert "${raw}" to Opaque — invalid base64 string`)
+			if (Buffer.isBuffer(varbind.value)) {
+				value = varbind.value
+			} else {
+				value = Buffer.from(raw, 'base64')
 			}
-			value = Buffer.from(padded, 'base64')
 			break
 		}
 
@@ -118,7 +122,8 @@ export const validateAndConvertVarbind = (varbind: snmp.Varbind): snmp.Varbind =
 		case snmp.ObjectType.Gauge:
 		case snmp.ObjectType.TimeTicks: {
 			const isHex = /^0x[0-9a-fA-F]+$/i.test(raw.trim())
-			const n = isHex ? Number.parseInt(raw, 16) : Number.parseInt(raw, 10)
+			const n =
+				typeof varbind.value == 'number' ? varbind.value : isHex ? Number.parseInt(raw, 16) : Number.parseInt(raw, 10)
 			if (Number.isNaN(n) || (!isHex && String(n) !== raw.trim()))
 				throw new Error(`Cannot convert "${raw}" to unsigned 32-bit integer`)
 			if (n < 0 || n > UINT32_MAX) throw new Error(`Value ${n} is out of range [0, ${UINT32_MAX}] for type ${type}`)
@@ -128,10 +133,13 @@ export const validateAndConvertVarbind = (varbind: snmp.Varbind): snmp.Varbind =
 
 		case snmp.ObjectType.Counter64: {
 			let n
-			try {
-				n = BigInt(raw)
-			} catch {
-				throw new Error(`Cannot convert "${raw}" to Counter64 — expected a 64-bit integer`)
+			if (typeof varbind.value == 'bigint') n = varbind.value
+			else {
+				try {
+					n = BigInt(raw)
+				} catch {
+					throw new Error(`Cannot convert "${raw}" to Counter64 — expected a 64-bit integer`)
+				}
 			}
 			if (n < 0n || n > UINT64_MAX) throw new Error(`Counter64 value ${n} is out of range [0, ${UINT64_MAX}]`)
 			const hex = n.toString(16).padStart(16, '0')
@@ -169,14 +177,15 @@ export function prepareVarbindForVariableAssignment(
 	varbind: snmp.Varbind,
 	displayString = false,
 	divisor = 1,
+	encoding: BufferEncoding = 'base64',
 ): string | number | boolean | null {
 	const value = varbind.value
 	if (typeof value == 'number') return value / divisor
 	if (varbind.type == snmp.ObjectType.OctetString && displayString) return value?.toLocaleString() ?? ''
 	if (varbind.type == snmp.ObjectType.Counter64 && Buffer.isBuffer(value)) return bufferToBigInt(value).toString()
 	if (typeof value == 'bigint') return value.toString()
-	if (varbind.type == snmp.ObjectType.Opaque && Buffer.isBuffer(value)) return value.toString('base64')
-	if (Buffer.isBuffer(value)) return value.toString('base64')
+	if (varbind.type == snmp.ObjectType.Opaque && Buffer.isBuffer(value)) return value.toString(encoding)
+	if (Buffer.isBuffer(value)) return value.toString(encoding)
 
 	return value || null
 }

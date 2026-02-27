@@ -268,12 +268,20 @@ describe('validateVarbinds', () => {
 	it('validates and returns an array of converted varbinds', () => {
 		const varbinds = [
 			{ oid: '1.3.6.1', type: snmp.ObjectType.Integer, value: '5' },
-			{ oid: '1.3.6.2', type: snmp.ObjectType.OctetString, value: 'hello' },
+			{ oid: '1.3.6.2', type: snmp.ObjectType.OctetString, value: 'Since I cannot prove a lover…' },
+			{ oid: '1.3.6.2', type: snmp.ObjectType.Opaque, value: Buffer.from('I am determined to prove a villain.') },
+			{
+				oid: '1.3.6.3',
+				type: snmp.ObjectType.Opaque,
+				value: 'A thing devised by the enemy',
+			},
 		] as snmp.Varbind[]
 
 		const result = validateVarbinds(varbinds)
 		expect(result[0].value).toBe(5)
-		expect(result[1].value).toBe('hello')
+		expect(result[1].value).toBe('Since I cannot prove a lover…')
+		expect(result[2].value).toStrictEqual(Buffer.from('I am determined to prove a villain.'))
+		expect(result[3].value).toStrictEqual(Buffer.from('A thing devised by the enemy', 'base64'))
 	})
 
 	it('wraps errors with the varbind index', () => {
@@ -314,6 +322,12 @@ describe('prepareVarbindForVariableAssignment', () => {
 		const buf = Buffer.from([0xde, 0xad, 0xbe, 0xef])
 		const result = prepareVarbindForVariableAssignment(vb(snmp.ObjectType.Opaque, buf))
 		expect(result).toBe(buf.toString('base64'))
+	})
+
+	it('returns an Opaque Buffer as a hex string', () => {
+		const buf = Buffer.from([0xde, 0xad, 0xbe, 0xef])
+		const result = prepareVarbindForVariableAssignment(vb(snmp.ObjectType.Opaque, buf), true, 1, 'hex')
+		expect(result).toBe(buf.toString('hex'))
 	})
 
 	it('returns null when value is falsy and no other condition matches', () => {
