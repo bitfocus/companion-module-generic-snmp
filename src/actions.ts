@@ -125,6 +125,8 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 	const actionDefs = {} as CompanionActionDefinitions<ActionSchema>
 	actionDefs[ActionId.SetString] = {
 		name: 'Set OID value to an OctetString',
+		learnTimeout: 6000,
+		optionsToMonitorForSubscribe: ['oid'],
 		options: [
 			{
 				...OidDropdownOptions,
@@ -138,6 +140,11 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			const oid = trimOid(options.oid)
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
 			await self.setOid(oid, snmp.ObjectType.OctetString, Buffer.from(options.value, options.encoding))
+		},
+		subscribe: async ({ id, options }, _context) => {
+			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
+			await self.getOid(oid)
 		},
 		learn: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
@@ -155,6 +162,8 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 	}
 	actionDefs[ActionId.SetOpaque] = {
 		name: 'Set OID value to an Opaque',
+		learnTimeout: 6000,
+		optionsToMonitorForSubscribe: ['oid'],
 		options: [
 			{
 				...OidDropdownOptions,
@@ -178,9 +187,16 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			}
 			await self.setOid(oid, snmp.ObjectType.Opaque, opaqueBuffer)
 		},
+		subscribe: async ({ id, options }, _context) => {
+			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
+			await self.getOid(oid)
+		},
 	}
 	actionDefs[ActionId.SetNumber] = {
 		name: 'Set OID value to a Number',
+		learnTimeout: 6000,
+		optionsToMonitorForSubscribe: ['oid'],
 		options: [
 			{
 				...OidDropdownOptions,
@@ -233,6 +249,11 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 
 			await self.setOid(oid, options.type, intValue)
 		},
+		subscribe: async ({ id, options }, _context) => {
+			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
+			await self.getOid(oid)
+		},
 		learn: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
@@ -255,6 +276,8 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 
 	actionDefs[ActionId.SetBoolean] = {
 		name: 'Set OID value to a Boolean',
+		learnTimeout: 6000,
+		optionsToMonitorForSubscribe: ['oid'],
 		options: [
 			{
 				...OidDropdownOptions,
@@ -298,6 +321,11 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 
 			await self.setOid(oid, snmp.ObjectType.Boolean, booleanValue)
 		},
+		subscribe: async ({ id, options }, _context) => {
+			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
+			await self.getOid(oid)
+		},
 		learn: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
@@ -315,6 +343,8 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 
 	actionDefs[ActionId.SetIpAddress] = {
 		name: 'Set OID value to an IP Address',
+		optionsToMonitorForSubscribe: ['oid'],
+		learnTimeout: 6000,
 		options: [
 			{
 				...OidDropdownOptions,
@@ -333,6 +363,11 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.IpAddress, value)
 		},
+		subscribe: async ({ id, options }, _context) => {
+			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
+			await self.getOid(oid)
+		},
 		learn: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
@@ -350,6 +385,8 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 
 	actionDefs[ActionId.SetOID] = {
 		name: 'Set OID value to an OID',
+		optionsToMonitorForSubscribe: ['oid'],
+		learnTimeout: 6000,
 		options: [
 			{
 				...OidDropdownOptions,
@@ -368,6 +405,11 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			const value = options.value
 			await self.setOid(oid, snmp.ObjectType.OID, value)
 		},
+		subscribe: async ({ id, options }, _context) => {
+			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
+			await self.getOid(oid)
+		},
 		learn: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
@@ -385,6 +427,8 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 
 	actionDefs[ActionId.GetOID] = {
 		name: 'Get OID value',
+		learnTimeout: 6000,
+		optionsToMonitorForSubscribe: ['oid'],
 		options: [
 			{
 				...OidDropdownOptions,
@@ -432,6 +476,7 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			if (action.options.update) {
 				self.oidTracker.addToPollGroup(oid, action.id)
 			} else self.oidTracker.removeFromPollGroup(oid, action.id)
+			await self.getOid(oid)
 		},
 		learn: async (action, _context) => {
 			const oid = trimOid(action.options.oid)
@@ -458,6 +503,7 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 
 	actionDefs[ActionId.TrapOrInform] = {
 		name: 'Send Trap or Inform message',
+		learnTimeout: 6000,
 		options: [
 			TrapOrInformOption,
 			{
@@ -475,7 +521,7 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			ObjectValueOption,
 			{
 				...EncodingOption,
-				isVisibleExpression: `$(options:trapType) == ${snmp.TrapType.EnterpriseSpecific} && $(options:objectType) == ${snmp.ObjectType.Opaque}`,
+				isVisibleExpression: `$(options:trapType) == ${snmp.TrapType.EnterpriseSpecific} && ($(options:objectType) == ${snmp.ObjectType.Opaque} || $(options:objectType) == ${snmp.ObjectType.OctetString})`,
 			},
 			...ObjectTypeHints,
 			...TrapTypeHints,
@@ -494,7 +540,10 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			}
 			const oid = trimOid(oidVarbind)
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
-			const varbindValue = objectType == snmp.ObjectType.Opaque ? Buffer.from(objectValue, encoding) : objectValue
+			const varbindValue =
+				objectType == snmp.ObjectType.Opaque || objectType == snmp.ObjectType.OctetString
+					? Buffer.from(objectValue, encoding)
+					: objectValue
 			const VarBind: snmp.Varbind = {
 				oid: trimOid(oidVarbind),
 				type: objectType,
@@ -513,16 +562,15 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			const oid = trimOid(options.oidVarbind)
 			const isV1 = self.config.version == 'v1'
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
-			await self.getOid(oid)
+			//await self.getOid(oid)
+			const retunedOptions: Partial<ActionSchema[ActionId.TrapOrInform]['options']> = {}
 			if (self.oidValues.has(oid)) {
 				const type = self.oidValues.get(oid)?.type
-				const retunedOptions: Partial<ActionSchema[ActionId.TrapOrInform]['options']> = {}
 				if (type) retunedOptions.objectType = type
-				// Force back to Trap message type if configured for SNMP v1 as Informs aren't supported in v1.
-				if (isV1) retunedOptions.messageType = 'trap'
-				if (Object.keys(retunedOptions).length > 0) return retunedOptions
 			}
-			return undefined
+			// Force to Trap message type if configured for SNMP v1 as Informs aren't supported in v1.
+			if (isV1) retunedOptions.messageType = 'trap'
+			return Object.keys(retunedOptions).length > 0 ? retunedOptions : undefined
 		},
 	}
 

@@ -131,8 +131,8 @@ describe(`${ActionId.SetString} callback`, () => {
 	})
 
 	it('calls setOid with OctetString type', async () => {
-		await runCallback(self, ActionId.SetString, { oid: VALID_OID, value: 'hello' })
-		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.OctetString, 'hello')
+		await runCallback(self, ActionId.SetString, { oid: VALID_OID, value: 'hello', encoding: 'utf8' })
+		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.OctetString, Buffer.from('hello', 'utf8'))
 	})
 
 	it('strips leading dot from OID', async () => {

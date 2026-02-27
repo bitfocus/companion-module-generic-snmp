@@ -280,7 +280,7 @@ export const ObjectTypeHints = [
 		type: 'static-text',
 		id: 'hint_octetstring',
 		label: 'Accepted values',
-		value: 'Any string.',
+		value: 'String will be converted to a buffer with the selected encoding type',
 		isVisibleExpression: `${enterpriseSpecific} && $(options:objectType) == ${snmp.ObjectType.OctetString}`,
 		disableAutoExpression: true,
 	},
