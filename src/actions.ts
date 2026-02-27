@@ -489,14 +489,16 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 		},
 		learn: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oidVarbind)
+			const isV1 = self.config.version == 'v1'
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
 			await self.getOid(oid)
 			if (self.oidValues.has(oid)) {
 				const type = self.oidValues.get(oid)?.type
-				if (type)
-					return {
-						objectType: type,
-					}
+				const retunedOptions: Partial<ActionSchema[ActionId.TrapOrInform]['options']> = {}
+				if (type) retunedOptions.objectType = type
+				// Force back to Trap message type if configured for SNMP v1 as Informs aren't supported in v1.
+				if (isV1) retunedOptions.messageType = 'trap'
+				if (Object.keys(retunedOptions).length > 0) return retunedOptions
 			}
 			return undefined
 		},
