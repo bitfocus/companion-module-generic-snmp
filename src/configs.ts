@@ -32,6 +32,7 @@ export default function (): SomeCompanionConfigField[] {
 		{ id: 'aes256r', label: '256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion' },
 	]
 	if (hasLegacyProviders) privProtocols.push({ id: 'des', label: 'DES encryption (CBC-DES)' })
+	else privProtocols.push({ id: 'des', label: 'DES encryption (CBC-DES) [UNAVAILABLE]' })
 	return [
 		{
 			type: 'textinput',
@@ -159,6 +160,14 @@ export default function (): SomeCompanionConfigField[] {
 			choices: privProtocols,
 			default: 'aes',
 			isVisibleExpression: ` $(options:version) === 'v3' && $(options:securityLevel) === 'authPriv' `,
+		},
+		{
+			type: 'static-text',
+			id: 'hint_des_unavailable',
+			width: 12,
+			label: 'Warning',
+			value: 'DES Priv Protocol requires connection to be run with <code>insecure algorithms</code> permissions',
+			isVisibleExpression: ` $(options:privProtocol) === 'des' && ${!hasLegacyProviders}`,
 		},
 		{
 			type: 'secret-text',
