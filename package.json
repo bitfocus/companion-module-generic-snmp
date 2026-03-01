@@ -23,7 +23,7 @@
   "devDependencies": {
     "@companion-module/tools": "^2.7.1",
     "@types/net-snmp": "^3.23.0",
-    "@types/node": "^25.3.0",
+    "@types/node": "^22.19.13",
     "eslint": "^9.39.3",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
