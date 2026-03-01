@@ -138,7 +138,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	}
 
 	public getConfigFields(): SomeCompanionConfigField[] {
-		return GetConfigFields()
+		return GetConfigFields(this.config?.privProtocol == 'des')
 	}
 
 	private connectAgent(): void {

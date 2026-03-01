@@ -25,7 +25,7 @@ export type ModuleSecrets = {
 	privKey: string
 }
 
-export default function (): SomeCompanionConfigField[] {
+export default function (isDesSelected: boolean): SomeCompanionConfigField[] {
 	const hasLegacyProviders = process.execArgv.includes('--openssl-legacy-provider')
 	const isLinuxUser = os.platform() === 'linux' && os.userInfo().username !== 'root'
 
@@ -34,8 +34,11 @@ export default function (): SomeCompanionConfigField[] {
 		{ id: 'aes256b', label: '256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localiztaion' },
 		{ id: 'aes256r', label: '256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion' },
 	]
+
+	// Only expose DES privProtocol only if process run with --openssl-legacy-provider flag, or if it is already selected.
 	if (hasLegacyProviders) privProtocols.push({ id: 'des', label: 'DES encryption (CBC-DES)' })
-	else privProtocols.push({ id: 'des', label: 'DES encryption (CBC-DES) [UNAVAILABLE]' })
+	else if (isDesSelected) privProtocols.push({ id: 'des', label: 'DES encryption (CBC-DES) [UNAVAILABLE]' })
+
 	return [
 		{
 			type: 'textinput',
