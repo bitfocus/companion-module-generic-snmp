@@ -1,5 +1,6 @@
 import { Regex, type SomeCompanionConfigField } from '@companion-module/base'
 import { generateEngineId } from './oidUtils.js'
+import * as os from 'os'
 
 export type ModuleConfig = {
 	ip: string
@@ -26,6 +27,8 @@ export type ModuleSecrets = {
 
 export default function (): SomeCompanionConfigField[] {
 	const hasLegacyProviders = process.execArgv.includes('--openssl-legacy-provider')
+	const isLinuxUser = os.platform() === 'linux' && os.userInfo().username !== 'root'
+
 	const privProtocols = [
 		{ id: 'aes', label: '128-bit AES encryption (CFB-AES-128)' },
 		{ id: 'aes256b', label: '256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localiztaion' },
@@ -194,6 +197,14 @@ export default function (): SomeCompanionConfigField[] {
 			default: 162,
 			isVisibleExpression: `$(options:traps)`,
 			description: 'Connection will bind to this port to listen for SNMP Traps & Informs',
+		},
+		{
+			type: 'static-text',
+			id: 'linuxPrivilegedPortWarning',
+			label: 'Privileged Port Warning',
+			value: `This module will attempt to bind to a privileged port (&lt;1024), which requires elevated permissions on Linux. Since you are not running as <code>root</code>, you may need to grant the Node.js binary the <code>CAP_NET_BIND_SERVICE</code> capability. You can do this with one of the following tools: <strong>setcap</strong>, <strong>authbind</strong>. Alternatively use <strong>iptables</strong> to redirect the privileged port to an unprivileged one.`,
+			width: 12,
+			isVisibleExpression: `${isLinuxUser} && $(options:traps) && $(options:portBind) < 1024`,
 		},
 		{
 			type: 'number',
