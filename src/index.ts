@@ -222,7 +222,10 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 						'error',
 						`Process running without --openssl-legacy-provider flag.\nDES priv protocol cannot be used. Note: Only supported in Companion v4.2.5 or later`,
 					)
-					this.statusManager.updateStatus(InstanceStatus.BadConfig, 'Insufficient Permissions')
+					this.statusManager.updateStatus(
+						InstanceStatus.InsufficientPermissions,
+						'Requires --openssl-legacy-provider flag',
+					)
 					return
 				}
 				user.privProtocol = snmp.PrivProtocols[this.config.privProtocol]
