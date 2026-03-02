@@ -15,8 +15,8 @@
     "test": "vitest --run"
   },
   "dependencies": {
-    "@companion-module/base": "~2.0.0-alpha.0",
-    "es-toolkit": "^1.44.0",
+    "@companion-module/base": "~2.0.0",
+    "es-toolkit": "^1.45.0",
     "net-snmp": "^3.26.1",
     "p-queue": "^9.1.0"
   },
