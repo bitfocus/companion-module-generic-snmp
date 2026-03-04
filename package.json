@@ -50,5 +50,5 @@
     "url": "git+https://github.com/bitfocus/companion-module-generic-snmp.git"
   },
   "prettier": "@companion-module/tools/.prettierrc.json",
-  "packageManager": "yarn@4.12.0"
+  "packageManager": "yarn@4.13.0"
 }
