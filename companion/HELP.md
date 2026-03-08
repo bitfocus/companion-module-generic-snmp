@@ -47,10 +47,9 @@ You can perform the following actions with this module:
 
 - Get OID value, return to custom variable
   - Optional update based on connection poll
-  - `OctetString` may be converted to `DisplayString`
+  - `OctetString` and `Opaque` OIDs converted to strings with the encoding option
   - Numeric values may be divided by the `Scaling Divisor` field to achieved fixed precision decimal values
   - `Counter64` OIDs returned as strings
-  - `Opaque` OIDs returned as strings with selectable encoding
 - Send Trap or Inform message
 - Set OID value to an OctetString
 - Set OID value to a Number. This includes the following SNMP Object Types:
@@ -69,7 +68,6 @@ You can perform the following actions with this module:
 - OID value
   - Optional update based on connection poll
   - Always updated via SNMP Trap
-  - `OctetString` may be converted to `DisplayString`
+  - `OctetString` and `Opaque` OIDs converted to strings with the encoding option
   - Numeric values may be divided by the `Scaling Divisor` field to achieved fixed precision decimal values
   - `Counter64` OIDs returned as strings
-  - `Opaque` OIDs returned as strings with selectable encoding

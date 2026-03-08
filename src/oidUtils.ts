@@ -176,13 +176,11 @@ export const validateVarbinds = (varbinds: snmp.Varbind[]): snmp.Varbind[] => {
 
 export function prepareVarbindForVariableAssignment(
 	varbind: snmp.Varbind,
-	displayString = false,
 	divisor = 1,
 	encoding: BufferEncoding = 'base64',
 ): JsonPrimitive {
 	const value = varbind.value
 	if (typeof value == 'number') return value / divisor
-	if (varbind.type == snmp.ObjectType.OctetString && displayString) return value?.toLocaleString() ?? ''
 	if (varbind.type == snmp.ObjectType.Counter64 && Buffer.isBuffer(value)) return bufferToBigInt(value).toString()
 	if (typeof value == 'bigint') return value.toString()
 	if (Buffer.isBuffer(value)) return value.toString(encoding)

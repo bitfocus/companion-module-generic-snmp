@@ -310,12 +310,7 @@ describe('prepareVarbindForVariableAssignment', () => {
 	const vb = (type: snmp.ObjectType, value: unknown): snmp.Varbind => ({ oid: '1.3.6.1', type, value }) as snmp.Varbind
 
 	it('divides a numeric value by the divisor', () => {
-		expect(prepareVarbindForVariableAssignment(vb(snmp.ObjectType.Integer, 100), false, 4)).toBe(25)
-	})
-
-	it('returns an OctetString as a locale string when displayString is true', () => {
-		const result = prepareVarbindForVariableAssignment(vb(snmp.ObjectType.OctetString, 'hello'), true)
-		expect(typeof result).toBe('string')
+		expect(prepareVarbindForVariableAssignment(vb(snmp.ObjectType.Integer, 100), 4)).toBe(25)
 	})
 
 	it('returns a Counter64 Buffer as a BigInt string', () => {
@@ -335,7 +330,7 @@ describe('prepareVarbindForVariableAssignment', () => {
 
 	it('returns an Opaque Buffer as a hex string', () => {
 		const buf = Buffer.from([0xde, 0xad, 0xbe, 0xef])
-		const result = prepareVarbindForVariableAssignment(vb(snmp.ObjectType.Opaque, buf), true, 1, 'hex')
+		const result = prepareVarbindForVariableAssignment(vb(snmp.ObjectType.Opaque, buf), 1, 'hex')
 		expect(result).toBe(buf.toString('hex'))
 	})
 

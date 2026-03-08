@@ -5,7 +5,6 @@ import {
 	ValueOption,
 	DivisorOption,
 	NumberObjectTypeHints,
-	DisplayStringOption,
 	TrapOrInformOption,
 	TrapOrOidOption,
 	EncodingOption,
@@ -81,7 +80,6 @@ export type ActionSchema = {
 			oid: string
 			variable: string
 			update: boolean
-			displaystring: boolean
 			div: number
 			encoding: BufferEncoding
 		}
@@ -455,7 +453,6 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 				description: 'Update each poll interval',
 				default: false,
 			},
-			DisplayStringOption,
 			DivisorOption,
 			EncodingOption,
 		],
@@ -467,13 +464,7 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			const varbind = self.oidValues.get(oid)
 			if (varbind == undefined || varbind.value === undefined)
 				throw new Error(`Varbind not found, can't update custom variable ${action.options.variable}`)
-			const value =
-				prepareVarbindForVariableAssignment(
-					varbind,
-					action.options.displaystring,
-					action.options.div,
-					action.options.encoding,
-				) ?? ''
+			const value = prepareVarbindForVariableAssignment(varbind, action.options.div, action.options.encoding) ?? ''
 			context.setCustomVariableValue(action.options.variable, value)
 		},
 		subscribe: async (action, _context) => {
