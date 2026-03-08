@@ -32,7 +32,7 @@ export default function (self: Generic_SNMP): CompanionFeedbackDefinitions<Feedb
 				default: self.getOidChoices()[0]?.id ?? '',
 			},
 			DivisorOption,
-			{ ...EncodingOption, description: `Encoding method used for Opaque / Buffer values` },
+			{ ...EncodingOption, description: `String encoding method used for OctetString, & Opaque object types` },
 			{ ...UpdateOption, default: true },
 		],
 		callback: async (feedback, _context) => {
