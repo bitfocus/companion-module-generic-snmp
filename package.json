@@ -34,7 +34,7 @@
     "vitest": "^4.0.18"
   },
   "engines": {
-    "node": "^22.13"
+    "node": "^22.22.1"
   },
   "license": "ISC",
   "lint-staged": {
