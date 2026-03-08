@@ -56,7 +56,7 @@ export const UpdateOption = {
 export const DivisorOption = {
 	type: 'number',
 	id: 'div',
-	label: 'Scaling Divisor',
+	label: 'Factor',
 	default: 1,
 	min: 1,
 	max: Number.MAX_SAFE_INTEGER,

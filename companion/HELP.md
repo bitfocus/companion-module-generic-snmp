@@ -48,7 +48,7 @@ You can perform the following actions with this module:
 - Get OID value, return to custom variable
   - Optional update based on connection poll
   - `OctetString` and `Opaque` OIDs converted to strings with the encoding option
-  - Numeric values may be divided by the `Scaling Divisor` field to achieved fixed precision decimal values
+  - Numeric values may be divided by the `Factor` field to achieved fixed precision decimal values
   - `Counter64` OIDs returned as strings
 - Send Trap or Inform message
 - Set OID value to an OctetString
@@ -69,5 +69,5 @@ You can perform the following actions with this module:
   - Optional update based on connection poll
   - Always updated via SNMP Trap
   - `OctetString` and `Opaque` OIDs converted to strings with the encoding option
-  - Numeric values may be divided by the `Scaling Divisor` field to achieved fixed precision decimal values
+  - Numeric values may be divided by the `Factor` field to achieved fixed precision decimal values
   - `Counter64` OIDs returned as strings
