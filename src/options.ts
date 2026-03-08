@@ -63,6 +63,8 @@ export const DivisorOption = {
 	step: 1,
 	description:
 		'If OID value is number, divide the raw OID value by this number. Use `10` for 1 decimal place, `100` for 2, `1000` for 3, etc. Does not work with Counter64 type VarBinds.',
+	asInteger: true,
+	clampValues: true,
 } as const satisfies CompanionInputFieldNumber
 
 export const EncodingOption = {

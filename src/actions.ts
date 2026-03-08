@@ -239,6 +239,8 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 				default: 0,
 				step: 1,
 				expressionDescription: `Number will be rounded to nearest integer`,
+				asInteger: true,
+				clampValues: true,
 			},
 			...NumberObjectTypeHints,
 		],
