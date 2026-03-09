@@ -9,8 +9,8 @@ To configure this module you will need:
 1. Agent Address - The IP Address of the SNMP enabled device you want to control
 2. UDP Port - The number of the UDP port on which the agent is listening (defaults to port 161)
 3. SNMP Version - The version of SNMP used by the agent. This will dictate how this module will authenticate with the agent
-4. Listen for Traps - Enable to bind to a port for SNMP Traps
-5. Listening Port - Port to listen for traps on. The module will ignore messages from IPs other than the configured Agent Address.
+4. Listen for Traps - Enable to bind to a port for SNMP Traps and Informs
+5. Listening Port - Port to listen for traps and informs on. The module will ignore messages from IPs other than the configured Agent Address.
 6. Poll Interval - The poll interval for Get OID value actions with update enabled, and _all_ Get OID Value feedbacks.
 7. Walk OIDs - If populated, the agent will walk the MIB starting at the OIDs in this comma seperated list.
 
