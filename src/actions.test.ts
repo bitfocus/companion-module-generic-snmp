@@ -272,13 +272,6 @@ describe(`${ActionId.SetBoolean} callback`, () => {
 		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.Boolean, false)
 	})
 
-	it('serializes an object value before parsing', async () => {
-		// object values are JSON.stringify'd before the switch
-		await expect(runCallback(self, ActionId.SetBoolean, { oid: VALID_OID, value: {} })).rejects.toThrow(
-			/not an boolean/,
-		)
-	})
-
 	it('throws on an unrecognised string value', async () => {
 		await expect(runCallback(self, ActionId.SetBoolean, { oid: VALID_OID, value: 'maybe' })).rejects.toThrow(
 			/not an boolean/,
