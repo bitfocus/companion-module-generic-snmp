@@ -1,4 +1,4 @@
-import { type CompanionActionDefinitions, type JsonValue } from '@companion-module/base'
+import { type CompanionActionDefinitions, type JsonPrimitive } from '@companion-module/base'
 import type Generic_SNMP from './index.js'
 import { isValidSnmpOid, prepareVarbindForVariableAssignment, trimOid } from './oidUtils.js'
 import {
@@ -60,7 +60,7 @@ export type ActionSchema = {
 	[ActionId.SetBoolean]: {
 		options: {
 			oid: string
-			value: boolean | JsonValue
+			value: boolean | JsonPrimitive
 		}
 	}
 	[ActionId.SetIpAddress]: {
@@ -300,26 +300,27 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 		callback: async ({ id, options }, _context) => {
 			const oid = trimOid(options.oid)
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
-			const parsedValue = typeof options.value == 'object' ? JSON.stringify(options.value) : options.value
+			const parsedValue = options.value
 			let booleanValue = typeof parsedValue == 'boolean' ? parsedValue : false
-
-			switch (String(parsedValue).trim().toLocaleLowerCase()) {
-				case 'true':
-				case 'on':
-				case '1':
-				case 'yes': {
-					booleanValue = true
-					break
-				}
-				case 'false':
-				case 'off':
-				case '0':
-				case 'no': {
-					booleanValue = false
-					break
-				}
-				default: {
-					throw new Error(`Value "${parsedValue}" is not an boolean. SNMP message not sent.`)
+			if (typeof parsedValue == 'string') {
+				switch (String(parsedValue).trim().toLocaleLowerCase()) {
+					case 'true':
+					case 'on':
+					case '1':
+					case 'yes': {
+						booleanValue = true
+						break
+					}
+					case 'false':
+					case 'off':
+					case '0':
+					case 'no': {
+						booleanValue = false
+						break
+					}
+					default: {
+						throw new Error(`Value "${parsedValue}" is not an boolean. SNMP message not sent.`)
+					}
 				}
 			}
 
