@@ -151,10 +151,10 @@ function v300(
 
 	for (const feedback of props.feedbacks) {
 		if (feedback.feedbackId === 'getOID') {
-			feedback.options.oid = FixupOidOrExpressionValueToExpression(String(feedback.options.oid))
+			if ('displaystring' in feedback.options) delete feedback.options.displaystring
+			feedback.options.oid = FixupOidOrExpressionValueToExpression(String(feedback.options.oid?.value))
 			feedback.options.div ??= { isExpression: false, value: 1 }
 			feedback.options.update ??= { isExpression: false, value: true }
-			feedback.options.displaystring ??= { isExpression: false, value: true }
 			feedback.options.encoding ??= { isExpression: false, value: 'utf8' }
 			result.updatedFeedbacks.push(feedback)
 		}
@@ -162,38 +162,47 @@ function v300(
 	for (const action of props.actions) {
 		if (action.actionId === 'setString') {
 			if ('displaystring' in action.options) delete action.options.displaystring
-			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid))
+			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid?.value))
 			action.options.encoding ??= { isExpression: false, value: 'utf8' }
-			action.options.value = { isExpression: false, value: String(action.options.value) }
+			action.options.value = {
+				isExpression: action.options.value?.isExpression ?? false,
+				value: String(action.options.value?.value),
+			}
 			result.updatedActions.push(action)
 		} else if (action.actionId === 'setNumber') {
-			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid))
+			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid?.value))
 			action.options.type = {
 				isExpression: false,
-				value: (action.options.type as unknown as JsonPrimitive) ?? snmp.ObjectType.Integer,
+				value: (action.options.type?.value as unknown as JsonPrimitive) ?? snmp.ObjectType.Integer,
 			}
 			action.options.value = FixupNumericOrVariablesValueToExpressions({
-				isExpression: false,
-				value: String(action.options.value),
+				isExpression: action.options.value?.isExpression ?? false,
+				value: String(action.options.value?.value),
 			})
 			result.updatedActions.push(action)
 		} else if (action.actionId === 'setBoolean') {
-			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid))
-			action.options.value = FixupBooleanStringOrVariablesValueToExpression(String(action.options.value))
+			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid?.value))
+			action.options.value = FixupBooleanStringOrVariablesValueToExpression(String(action.options.value?.value))
 			result.updatedActions.push(action)
 		} else if (action.actionId === 'setIpAddress') {
-			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid))
-			action.options.value = { isExpression: false, value: String(action.options.value) }
+			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid?.value))
+			action.options.value = {
+				isExpression: action.options.value?.isExpression ?? false,
+				value: String(action.options.value?.value),
+			}
 			result.updatedActions.push(action)
 		} else if (action.actionId === 'setOid') {
-			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid))
-			action.options.value = { isExpression: false, value: String(action.options.value) }
+			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid?.value))
+			action.options.value = {
+				isExpression: action.options.value?.isExpression ?? false,
+				value: String(action.options.value?.value),
+			}
 			result.updatedActions.push(action)
 		} else if (action.actionId === 'getOID') {
-			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid))
+			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid?.value))
 			action.options.encoding ??= { isExpression: false, value: 'utf8' }
 			action.options.div ??= { isExpression: false, value: 1 }
-			action.options.update = { isExpression: false, value: action.options.update as unknown as boolean }
+			action.options.update = { isExpression: false, value: action.options.update?.value as unknown as boolean }
 			result.updatedActions.push(action)
 		}
 	}
