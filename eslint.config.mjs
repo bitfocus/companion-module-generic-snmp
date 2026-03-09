@@ -1,14 +1,21 @@
 import { generateEslintConfig } from '@companion-module/tools/eslint/config.mjs'
 
-const baseConfig = await generateEslintConfig({})
+const baseConfig = await generateEslintConfig({
+	enableTypescript: true,
+})
 
-const customConfig = [
+export default [
 	...baseConfig,
 	{
+		files: ['vitest.config.ts', '**/*.test.ts', '**/*.spec.ts'],
 		languageOptions: {
-			sourceType: 'module',
+			parserOptions: {
+				project: ['./tsconfig.json', './tsconfig.node.json'],
+			},
+		},
+		rules: {
+			'n/no-unpublished-import': 'off',
+			'@typescript-eslint/unbound-method': 'off',
 		},
 	},
 ]
-
-export default customConfig
