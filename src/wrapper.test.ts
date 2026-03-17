@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events'
 import { RemoteInfo } from 'dgram'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { ModuleLogger } from '@companion-module/base'
 import { SharedUDPSocketWrapper } from './wrapper.js'
 
 // ---------------------------------------------------------------------------
@@ -16,6 +17,15 @@ function createMockSocket() {
 		// Helper to simulate an incoming UDP message in tests
 		_emit: (msg: Buffer, rinfo: RemoteInfo) => emitter.emit('message', msg, rinfo),
 	}
+}
+
+function createMockLogger(): ModuleLogger {
+	return {
+		info: vi.fn(),
+		warn: vi.fn(),
+		error: vi.fn(),
+		debug: vi.fn(),
+	} as unknown as ModuleLogger
 }
 
 type MockSocket = ReturnType<typeof createMockSocket>
@@ -34,49 +44,62 @@ function makeRinfo(address: string): RemoteInfo {
 
 describe('SharedUDPSocketWrapper constructor', () => {
 	let mockSocket: MockSocket
+	let mockLogger: ModuleLogger
 
 	beforeEach(() => {
 		mockSocket = createMockSocket()
+		mockLogger = createMockLogger()
 	})
 
 	it('creates an instance with correct initial properties', () => {
-		const wrapper = new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, VALID_ADDRESS)
+		const wrapper = new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, VALID_ADDRESS, mockLogger)
 		expect(wrapper.port).toBe(VALID_PORT)
 		expect(wrapper.allowedAddress).toBe(VALID_ADDRESS)
 		expect(wrapper.isShared).toBe(true)
 	})
 
 	it('registers the message handler on the shared socket', () => {
-		new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, VALID_ADDRESS)
+		new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, VALID_ADDRESS, mockLogger)
 		expect(mockSocket.on).toHaveBeenCalledWith('message', expect.any(Function))
 	})
 
+	it('logs initialization message', () => {
+		new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, VALID_ADDRESS, mockLogger)
+		expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining(VALID_ADDRESS))
+	})
+
 	it('throws on a port below the valid range', () => {
-		expect(() => new SharedUDPSocketWrapper(mockSocket as any, 0, VALID_ADDRESS)).toThrow(/Port out of range/)
+		expect(() => new SharedUDPSocketWrapper(mockSocket as any, 0, VALID_ADDRESS, mockLogger)).toThrow(
+			/Port out of range/,
+		)
 	})
 
 	it('throws on a port above the valid range', () => {
-		expect(() => new SharedUDPSocketWrapper(mockSocket as any, 65536, VALID_ADDRESS)).toThrow(/Port out of range/)
+		expect(() => new SharedUDPSocketWrapper(mockSocket as any, 65536, VALID_ADDRESS, mockLogger)).toThrow(
+			/Port out of range/,
+		)
 	})
 
 	it('throws on a non-integer port', () => {
-		expect(() => new SharedUDPSocketWrapper(mockSocket as any, 80.5, VALID_ADDRESS)).toThrow(/Port out of range/)
+		expect(() => new SharedUDPSocketWrapper(mockSocket as any, 80.5, VALID_ADDRESS, mockLogger)).toThrow(
+			/Port out of range/,
+		)
 	})
 
 	it('throws on an invalid IP address', () => {
-		expect(() => new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, 'not-an-ip')).toThrow(
+		expect(() => new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, 'not-an-ip', mockLogger)).toThrow(
 			/Allowed Address must be a IPv4 address/,
 		)
 	})
 
 	it('throws on an IPv6 address', () => {
-		expect(() => new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, '::1')).toThrow(
+		expect(() => new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, '::1', mockLogger)).toThrow(
 			/Allowed Address must be a IPv4 address/,
 		)
 	})
 
 	it('throws on an IP address with an out-of-range octet', () => {
-		expect(() => new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, '192.168.1.256')).toThrow(
+		expect(() => new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, '192.168.1.256', mockLogger)).toThrow(
 			/Allowed Address must be a IPv4 address/,
 		)
 	})
@@ -88,11 +111,13 @@ describe('SharedUDPSocketWrapper constructor', () => {
 
 describe('messageHandler', () => {
 	let mockSocket: MockSocket
+	let mockLogger: ModuleLogger
 	let wrapper: SharedUDPSocketWrapper
 
 	beforeEach(() => {
 		mockSocket = createMockSocket()
-		wrapper = new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, VALID_ADDRESS)
+		mockLogger = createMockLogger()
+		wrapper = new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, VALID_ADDRESS, mockLogger)
 	})
 
 	it('emits "message" when the source address matches allowedAddress', () => {
@@ -112,6 +137,14 @@ describe('messageHandler', () => {
 		mockSocket._emit(Buffer.from('test'), makeRinfo(OTHER_ADDRESS))
 
 		expect(listener).not.toHaveBeenCalled()
+	})
+
+	it('logs a debug message when the source address does not match', () => {
+		wrapper.on('message', vi.fn())
+
+		mockSocket._emit(Buffer.from('test'), makeRinfo(OTHER_ADDRESS))
+
+		expect(mockLogger.debug).toHaveBeenCalledWith(expect.stringContaining(OTHER_ADDRESS))
 	})
 
 	it('emits a copy of the buffer, not the original reference', () => {
@@ -146,16 +179,23 @@ describe('messageHandler', () => {
 
 describe('setAllowedAddress', () => {
 	let mockSocket: MockSocket
+	let mockLogger: ModuleLogger
 	let wrapper: SharedUDPSocketWrapper
 
 	beforeEach(() => {
 		mockSocket = createMockSocket()
-		wrapper = new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, VALID_ADDRESS)
+		mockLogger = createMockLogger()
+		wrapper = new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, VALID_ADDRESS, mockLogger)
 	})
 
 	it('updates the allowed address', () => {
 		wrapper.setAllowedAddress('10.0.0.1')
 		expect(wrapper.allowedAddress).toBe('10.0.0.1')
+	})
+
+	it('logs the address change', () => {
+		wrapper.setAllowedAddress(OTHER_ADDRESS)
+		expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining(OTHER_ADDRESS))
 	})
 
 	it('filters by the new address after update', () => {
@@ -191,7 +231,7 @@ describe('bind', () => {
 	let wrapper: SharedUDPSocketWrapper
 
 	beforeEach(() => {
-		wrapper = new SharedUDPSocketWrapper(createMockSocket() as any, VALID_PORT, VALID_ADDRESS)
+		wrapper = new SharedUDPSocketWrapper(createMockSocket() as any, VALID_PORT, VALID_ADDRESS, createMockLogger())
 	})
 
 	it('calls the callback asynchronously', async () =>
@@ -216,7 +256,7 @@ describe('bind', () => {
 
 describe('address', () => {
 	it('returns the correct address info', () => {
-		const wrapper = new SharedUDPSocketWrapper(createMockSocket() as any, 514, VALID_ADDRESS)
+		const wrapper = new SharedUDPSocketWrapper(createMockSocket() as any, 514, VALID_ADDRESS, createMockLogger())
 		expect(wrapper.address()).toEqual({ address: '0.0.0.0', family: 'IPv4', port: 514 })
 	})
 })
@@ -227,7 +267,7 @@ describe('address', () => {
 
 describe('type', () => {
 	it('returns "udp4"', () => {
-		const wrapper = new SharedUDPSocketWrapper(createMockSocket() as any, VALID_PORT, VALID_ADDRESS)
+		const wrapper = new SharedUDPSocketWrapper(createMockSocket() as any, VALID_PORT, VALID_ADDRESS, createMockLogger())
 		expect(wrapper.type).toBe('udp4')
 	})
 })
@@ -238,7 +278,7 @@ describe('type', () => {
 
 describe('createSocket', () => {
 	it('returns itself', () => {
-		const wrapper = new SharedUDPSocketWrapper(createMockSocket() as any, VALID_PORT, VALID_ADDRESS)
+		const wrapper = new SharedUDPSocketWrapper(createMockSocket() as any, VALID_PORT, VALID_ADDRESS, createMockLogger())
 		expect(wrapper.createSocket('udp4')).toBe(wrapper)
 	})
 })
@@ -249,16 +289,23 @@ describe('createSocket', () => {
 
 describe('close', () => {
 	let mockSocket: MockSocket
+	let mockLogger: ModuleLogger
 	let wrapper: SharedUDPSocketWrapper
 
 	beforeEach(() => {
 		mockSocket = createMockSocket()
-		wrapper = new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, VALID_ADDRESS)
+		mockLogger = createMockLogger()
+		wrapper = new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, VALID_ADDRESS, mockLogger)
 	})
 
 	it('removes the message listener from the shared socket', () => {
 		wrapper.close()
 		expect(mockSocket.removeListener).toHaveBeenCalledWith('message', wrapper.messageHandler)
+	})
+
+	it('logs the close call', () => {
+		wrapper.close()
+		expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining('Close'))
 	})
 
 	it('calls the callback asynchronously', async () =>
@@ -288,13 +335,23 @@ describe('close', () => {
 describe('send', () => {
 	it('delegates to the shared socket send method with all arguments', () => {
 		const mockSocket = createMockSocket()
-		const wrapper = new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, VALID_ADDRESS)
+		const wrapper = new SharedUDPSocketWrapper(mockSocket as any, VALID_PORT, VALID_ADDRESS, createMockLogger())
 
 		const msg = Buffer.from('payload')
 		const cb = vi.fn()
 		wrapper.send(msg, 0, msg.length, 162, VALID_ADDRESS, cb)
 
 		expect(mockSocket.send).toHaveBeenCalledWith(msg, 0, msg.length, 162, VALID_ADDRESS, cb)
+	})
+
+	it('logs a debug message when sending', () => {
+		const mockLogger = createMockLogger()
+		const wrapper = new SharedUDPSocketWrapper(createMockSocket() as any, VALID_PORT, VALID_ADDRESS, mockLogger)
+
+		const msg = Buffer.from('payload')
+		wrapper.send(msg, 0, msg.length, 162, VALID_ADDRESS)
+
+		expect(mockLogger.debug).toHaveBeenCalledWith(expect.stringContaining(VALID_ADDRESS))
 	})
 })
 
@@ -306,7 +363,7 @@ describe('ref and unref', () => {
 	let wrapper: SharedUDPSocketWrapper
 
 	beforeEach(() => {
-		wrapper = new SharedUDPSocketWrapper(createMockSocket() as any, VALID_PORT, VALID_ADDRESS)
+		wrapper = new SharedUDPSocketWrapper(createMockSocket() as any, VALID_PORT, VALID_ADDRESS, createMockLogger())
 	})
 
 	it('ref returns itself', () => {

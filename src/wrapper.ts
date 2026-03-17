@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import type { SharedUdpSocket } from '@companion-module/base'
+import type { ModuleLogger, SharedUdpSocket } from '@companion-module/base'
 import { RemoteInfo } from 'dgram'
 
 const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
@@ -16,6 +16,7 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 	port = 162
 	allowedAddress!: string
 	isShared = false
+	private logger!: ModuleLogger
 	/**
 	 * Create a SharedUDPSocket wrapper
 	 *
@@ -23,7 +24,7 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 	 * @param port - The UDP port number
 	 * @param allowedAddress - IP address to filter messages by (only messages from this address are emitted)
 	 */
-	constructor(sharedSocket: SharedUdpSocket, port: number, allowedAddress: string) {
+	constructor(sharedSocket: SharedUdpSocket, port: number, allowedAddress: string, logger: ModuleLogger) {
 		super()
 
 		/** @type {import('@companion-module/base').SharedUdpSocket} */
@@ -40,7 +41,11 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 		/** @type {boolean} */
 		this.isShared = true
 
+		this.logger = logger
+
 		this.sharedSocket.on('message', this.messageHandler)
+
+		this.logger.info(`Shared UDP Socket Wrapper initalized, listening for  messages from ${allowedAddress}`)
 	}
 
 	// Forward only matching messages
@@ -49,7 +54,7 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 		// Only emit if the source address matches
 		if (rinfo.address === this.allowedAddress) {
 			this.emit('message', Buffer.from(msg), rinfo)
-		}
+		} else this.logger.debug(`Recieved message from ${rinfo.address}, ignoring`)
 	}
 
 	/**
@@ -59,6 +64,7 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 	setAllowedAddress(address: string): void {
 		if (!address.match(ipRegex)) throw new Error(`Allowed Address must be a IPv4 address: ${address}`)
 		this.allowedAddress = address
+		this.logger.info(`Setting allowed address to ${address}`)
 	}
 
 	/**
@@ -104,6 +110,7 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 	 *
 	 */
 	close(callback?: () => void): void {
+		this.logger.info(`Close called: Removing message listener from shared socket`)
 		this.sharedSocket.removeListener('message', this.messageHandler)
 		if (callback) {
 			process.nextTick(callback)
@@ -122,6 +129,7 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 		address: string,
 		callback?: () => void,
 	): void {
+		this.logger.debug(`Sending messagee to ${address}`)
 		this.sharedSocket.send(msg, offset, length, port, address, callback)
 	}
 

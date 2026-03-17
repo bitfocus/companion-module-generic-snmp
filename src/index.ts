@@ -4,6 +4,7 @@ import {
 	SomeCompanionConfigField,
 	SharedUdpSocket,
 	DropdownChoice,
+	createModuleLogger,
 } from '@companion-module/base'
 import snmp from 'net-snmp'
 import PQueue from 'p-queue'
@@ -286,6 +287,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 					this.listeningSocket,
 					this.config.portBind || 162,
 					this.config.ip, // Only accept traps from this IP
+					createModuleLogger('UDP Socket Wrapper'),
 				)
 				const receiverOptions = {
 					port: this.config.portBind || 162,
