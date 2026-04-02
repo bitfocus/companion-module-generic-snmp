@@ -59,8 +59,9 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		this.secrets = secrets
 		this.updateActions()
 		this.updateFeedbacks()
-		await this.initializeConnection()
+
 		await this.setAgentAddress()
+		await this.initializeConnection()
 	}
 
 	public async configUpdated(config: ModuleConfig, secrets: ModuleSecrets): Promise<void> {
