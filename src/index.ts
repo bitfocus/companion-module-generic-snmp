@@ -442,20 +442,19 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 					if (this.session == null) {
 						reject(new Error('SNMP session not initialized'))
 						return
-					} else {
-						this.session.get(oids, (error, varbinds) => {
-							if (error) {
-								reject(error)
-								return
-							}
-							if (Array.isArray(varbinds)) {
-								varbinds.forEach((varbind, index) => {
-									this.handleVarbind(varbind, index)
-								})
-							}
-							resolve()
-						})
 					}
+					this.session.get(oids, (error, varbinds) => {
+						if (error) {
+							reject(error)
+							return
+						}
+						if (Array.isArray(varbinds)) {
+							varbinds.forEach((varbind, index) => {
+								this.handleVarbind(varbind, index)
+							})
+						}
+						resolve()
+					})
 				})
 			},
 			{ priority: 0 },
