@@ -191,7 +191,7 @@ function v300(
 				value: String(action.options.value?.value),
 			}
 			result.updatedActions.push(action)
-		} else if (action.actionId === 'setOid') {
+		} else if (action.actionId === 'setOID') {
 			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid?.value))
 			action.options.value = {
 				isExpression: action.options.value?.isExpression ?? false,
