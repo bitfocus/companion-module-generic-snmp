@@ -78,7 +78,6 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		this.updateFeedbacks()
 
 		await this.initializeConnection()
-		await this.setAgentAddress()
 	}
 
 	public async destroy(): Promise<void> {
