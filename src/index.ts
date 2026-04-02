@@ -38,6 +38,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	private agentAddress = '127.0.0.1'
 
 	private pollTimer: NodeJS.Timeout | undefined
+	private pollGeneration: number = 0
 
 	private session: snmp.Session | null = null
 
@@ -63,6 +64,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	}
 
 	public async configUpdated(config: ModuleConfig, secrets: ModuleSecrets): Promise<void> {
+		this.pollGeneration++
 		this.snmpQueue.clear()
 		this.closeListener()
 
@@ -83,6 +85,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	public async destroy(): Promise<void> {
 		this.log('debug', `destroy ${this.id}:${this.label}`)
 		this.statusManager.destroy()
+		this.pollGeneration++
 		this.snmpQueue.clear()
 		this.throttledFeedbackIdCheck.cancel()
 		this.debouncedUpdateDefinitions.cancel()
@@ -591,8 +594,12 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	}
 
 	private async pollOids(): Promise<void> {
+		const generation = this.pollGeneration
 		const oids = this.oidTracker.getOidsToPoll
 		if (oids.length > 0) await this.getOid(...oids)
+
+		// Abort if configUpdated() or destory() fired while awaiting getOid
+		if (generation !== this.pollGeneration) return
 		if (this.config.interval > 0) {
 			this.pollTimer = setTimeout(() => {
 				this.pollOids().catch(() => {})
