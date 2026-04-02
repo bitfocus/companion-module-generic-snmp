@@ -116,6 +116,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 *
 	 */
 	private async initializeConnection(): Promise<void> {
+		const generation = this.pollGeneration
 		this.connectAgent()
 
 		if (this.config.traps) {
@@ -128,16 +129,19 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		}
 		if (this.config.walk) {
 			const walkPaths = this.config.walk.split(',').map((oid) => oid.trim())
-			walkPaths.forEach((oid) => {
+			for (const oid of walkPaths) {
+				if (generation !== this.pollGeneration) break
 				try {
 					this.log('info', `Walking ${oid}...`)
-					this.walk(oid).catch(() => {})
+					await this.walk(oid)
 					this.log('info', `Walk of ${oid} complete!`)
 				} catch (err) {
 					this.log('warn', `Walk failed - ${err instanceof Error ? err.message : String(err)}`)
 				}
-			})
+			}
 		}
+
+		if (generation !== this.pollGeneration) return
 
 		if (this.config.interval > 0) {
 			this.pollOids().catch(() => {})
@@ -329,13 +333,13 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	}
 
 	/**
-	 * Process a recieved SNMP Trap
+	 * Process a received SNMP Trap
 	 *
 	 * @param trap - The trap or inform to process
 	 */
 	private processTrap(trap: snmp.Notification): void {
 		try {
-			if (this.config.verbose) this.log(`debug`, `${snmp.PduType[trap.pdu.type]} recieved`)
+			if (this.config.verbose) this.log(`debug`, `${snmp.PduType[trap.pdu.type]} received`)
 			if (this.config.verbose) this.log('debug', JSON.stringify(trap))
 			if (Array.isArray(trap.pdu.varbinds)) {
 				trap.pdu.varbinds.forEach((varbind, index) => {
@@ -404,17 +408,13 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		await this.snmpQueue.add(
 			async () => {
 				return new Promise<void>((resolve, reject) => {
-					if (this.session == null) reject(new Error('SNMP session not initialized'))
-					else {
-						this.session.set([{ oid, type, value }], (error) => {
-							if (error) {
-								reject(error)
-							} else {
-								if (this.config.verbose) this.log('debug', `Set OID: ${oid} type: ${type} value: ${value}`)
-								resolve()
-							}
-						})
-					}
+					if (this.session == null) return reject(new Error('SNMP session not initialized'))
+
+					this.session.set([{ oid, type, value }], (error) => {
+						if (error) return reject(error)
+						if (this.config.verbose) this.log('debug', `Set OID: ${oid} type: ${type} value: ${value}`)
+						resolve()
+					})
 				})
 			},
 			{ priority: 1 },
@@ -443,15 +443,10 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		return await this.snmpQueue.add(
 			async () => {
 				return new Promise<void>((resolve, reject) => {
-					if (this.session == null) {
-						reject(new Error('SNMP session not initialized'))
-						return
-					}
+					if (this.session == null) return reject(new Error('SNMP session not initialized'))
 					this.session.get(oids, (error, varbinds) => {
-						if (error) {
-							reject(error)
-							return
-						}
+						if (error) return reject(error)
+
 						if (Array.isArray(varbinds)) {
 							varbinds.forEach((varbind, index) => {
 								this.handleVarbind(varbind, index)
@@ -485,11 +480,12 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 						varbinds.forEach((varbind, index) => this.handleVarbind(varbind, index))
 					}
 					const doneCb = (error: Error | null) => {
-						if (error) reject(error)
-						else resolve()
+						if (error) return reject(error)
+						resolve()
 					}
-					if (this.session == null) reject(new Error('SNMP session not initialized'))
-					else this.session.walk(oid, feedCb, doneCb)
+					if (this.session == null) return reject(new Error('SNMP session not initialized'))
+
+					this.session.walk(oid, feedCb, doneCb)
 				})
 			},
 			{ priority: 0 },
@@ -512,27 +508,20 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 				return new Promise<void>((resolve, reject) => {
 					if (typeof typeOrOid === 'string') {
 						typeOrOid = trimOid(typeOrOid)
-						if (!isValidSnmpOid(typeOrOid)) {
-							reject(new Error(`Invalid Enterprise OID: ${typeOrOid}`))
-							return
-						}
+						if (!isValidSnmpOid(typeOrOid)) return reject(new Error(`Invalid Enterprise OID: ${typeOrOid}`))
 					}
-					if (this.session == null) reject(new Error('SNMP session not initalized'))
-					else {
-						const validatedVarBinds = validateVarbinds(varbinds)
+					if (this.session == null) return reject(new Error('SNMP session not initialized'))
 
-						this.session.inform(typeOrOid, validatedVarBinds, (error) => {
-							if (error) {
-								reject(error)
-								return
-							}
-							this.log(
-								'info',
-								`Inform sent: ${typeof typeOrOid === 'number' ? snmp.TrapType[typeOrOid] : typeOrOid}${validatedVarBinds.length > 0 ? `\n${JSON.stringify(validatedVarBinds)}` : ''}`,
-							)
-							resolve()
-						})
-					}
+					const validatedVarBinds = validateVarbinds(varbinds)
+
+					this.session.inform(typeOrOid, validatedVarBinds, (error) => {
+						if (error) return reject(error)
+						this.log(
+							'info',
+							`Inform sent: ${typeof typeOrOid === 'number' ? snmp.TrapType[typeOrOid] : typeOrOid}${validatedVarBinds.length > 0 ? `\n${JSON.stringify(validatedVarBinds)}` : ''}`,
+						)
+						resolve()
+					})
 				})
 			},
 			{ priority: 2 },
@@ -553,27 +542,21 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 				return new Promise<void>((resolve, reject) => {
 					if (typeof typeOrOid === 'string') {
 						typeOrOid = trimOid(typeOrOid)
-						if (!isValidSnmpOid(typeOrOid)) {
-							reject(new Error(`Invalid Enterprise OID: ${typeOrOid}`))
-							return
-						}
+						if (!isValidSnmpOid(typeOrOid)) return reject(new Error(`Invalid Enterprise OID: ${typeOrOid}`))
 					}
-					if (this.session == null) reject(new Error('SNMP session not initalized'))
-					else {
-						const validatedVarBinds = validateVarbinds(varbinds)
+					if (this.session == null) return reject(new Error('SNMP session not initialized'))
 
-						this.session.trap(typeOrOid, validatedVarBinds, this.agentAddress, (error) => {
-							if (error) {
-								reject(error)
-								return
-							}
-							this.log(
-								'info',
-								`Trap sent: ${typeof typeOrOid === 'number' ? snmp.TrapType[typeOrOid] : typeOrOid}${validatedVarBinds.length > 0 ? `\n${JSON.stringify(validatedVarBinds)}` : ''}`,
-							)
-							resolve()
-						})
-					}
+					const validatedVarBinds = validateVarbinds(varbinds)
+
+					this.session.trap(typeOrOid, validatedVarBinds, this.agentAddress, (error) => {
+						if (error) return reject(error)
+
+						this.log(
+							'info',
+							`Trap sent: ${typeof typeOrOid === 'number' ? snmp.TrapType[typeOrOid] : typeOrOid}${validatedVarBinds.length > 0 ? `\n${JSON.stringify(validatedVarBinds)}` : ''}`,
+						)
+						resolve()
+					})
 				})
 			},
 			{ priority: 3 },
