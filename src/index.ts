@@ -244,6 +244,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	private disconnectAgent(): void {
 		if (this.session) {
 			this.session.close()
+			this.session = null
 		}
 		this.statusManager.updateStatus(InstanceStatus.Disconnected)
 	}
