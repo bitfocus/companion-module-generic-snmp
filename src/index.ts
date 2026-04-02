@@ -98,7 +98,10 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	private async setAgentAddress(): Promise<void> {
 		return new Promise<void>((resolve) => {
 			dns.lookup(os.hostname(), (err, addr) => {
-				if (err) resolve()
+				if (err) {
+					resolve()
+					return
+				}
 				this.agentAddress = addr
 				resolve()
 			})
