@@ -439,11 +439,14 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		return await this.snmpQueue.add(
 			async () => {
 				return new Promise<void>((resolve, reject) => {
-					if (this.session == null) reject(new Error('SNMP session not initialized'))
-					else {
+					if (this.session == null) {
+						reject(new Error('SNMP session not initialized'))
+						return
+					} else {
 						this.session.get(oids, (error, varbinds) => {
 							if (error) {
 								reject(error)
+								return
 							}
 							if (Array.isArray(varbinds)) {
 								varbinds.forEach((varbind, index) => {
