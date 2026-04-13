@@ -413,9 +413,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 
 	public async setOid(oid: string, type: snmp.ObjectType, value: snmp.VarbindValue): Promise<void> {
 		oid = trimOid(oid)
-		if (!isValidSnmpOid(oid) || oid.length == 0) {
-			throw new Error(`Invalid OID: ${oid}`)
-		}
+		if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID: ${oid}`)
 		await this.snmpQueue.add(
 			async () => {
 				return new Promise<void>((resolve, reject) => {
@@ -442,7 +440,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	public async getOid(...oids: string[]): Promise<void> {
 		oids = oids.reduce((acc: string[], oid) => {
 			oid = trimOid(oid)
-			if (!isValidSnmpOid(oid) || oid.length == 0) {
+			if (!isValidSnmpOid(oid)) {
 				this.log('warn', `Invalid OID skipped: ${oid}`)
 				return acc
 			}
