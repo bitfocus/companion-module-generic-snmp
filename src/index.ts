@@ -127,6 +127,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 				if (err instanceof Error) this.log('error', `Could not initialize SNMP Trap listener: ${err.message}`)
 				else this.log('error', `Could not initialize SNMP Trap listener: ${err}`)
 			}
+			if (generation !== this.pollGeneration) return
 		}
 		if (this.config.walk) {
 			const walkPaths = this.config.walk.split(',').map((oid) => oid.trim())
