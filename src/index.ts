@@ -103,8 +103,8 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		return new Promise<void>((resolve) => {
 			dns.lookup(os.hostname(), (err, addr) => {
 				if (err) {
-					resolve()
-					return
+					this.log('warn', `Could not resolve local hostname for agentAddress, defaulting to 127.0.0.1: ${err.message}`)
+					return resolve()
 				}
 				this.agentAddress = addr
 				resolve()
@@ -470,10 +470,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 
 	public async walk(oid: string): Promise<void> {
 		oid = trimOid(oid)
-		if (!isValidSnmpOid(oid) || oid.length == 0) {
-			this.log('warn', `Invalid OID: ${oid}, walk cancelled`)
-			return
-		}
+		if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID: ${oid}, walk cancelled`)
 		return await this.snmpQueue.add(
 			async () => {
 				return new Promise<void>((resolve, reject) => {
