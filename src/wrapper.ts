@@ -45,7 +45,7 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 
 		this.sharedSocket.on('message', this.messageHandler)
 
-		this.logger.info(`Shared UDP Socket Wrapper initalized, listening for  messages from ${allowedAddress}`)
+		this.logger.info(`Shared UDP Socket Wrapper initialized, listening for  messages from ${allowedAddress}`)
 	}
 
 	// Forward only matching messages
@@ -54,7 +54,7 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 		// Only emit if the source address matches
 		if (rinfo.address === this.allowedAddress) {
 			this.emit('message', Buffer.from(msg), rinfo)
-		} else this.logger.debug(`Recieved message from ${rinfo.address}, ignoring`)
+		} else this.logger.debug(`Received message from ${rinfo.address}, ignoring`)
 	}
 
 	/**
