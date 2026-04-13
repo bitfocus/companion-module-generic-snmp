@@ -342,10 +342,8 @@ describe('walk', () => {
 		expect(instance.oidValues.has('1.3.6.1.1')).toBe(true)
 	})
 
-	it('returns early and logs a warning for an invalid OID', async () => {
-		await instance.walk('bad-oid')
-		expect(session.walk).not.toHaveBeenCalled()
-		expect(instance.log).toHaveBeenCalledWith('warn', expect.stringContaining('bad-oid'))
+	it('rejects when passed an invalid OID', async () => {
+		await expect(instance.walk('bad-oid')).rejects.toThrow(/Invalid OID/)
 	})
 
 	it('rejects when the session is null', async () => {

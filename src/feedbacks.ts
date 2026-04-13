@@ -57,7 +57,6 @@ export default function (self: Generic_SNMP): CompanionFeedbackDefinitions<Feedb
 		},
 		unsubscribe: (feedback) => {
 			self.oidTracker.removeFeedback(feedback.id)
-			self.oidTracker.removeFromPollGroup(trimOid(feedback.options.oid), feedback.id)
 		},
 	}
 	return feedbackDefs

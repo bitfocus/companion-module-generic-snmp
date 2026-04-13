@@ -66,6 +66,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 
 	public async configUpdated(config: ModuleConfig, secrets: ModuleSecrets): Promise<void> {
 		this.pollGeneration++
+		this.oidValues.clear()
 		this.snmpQueue.clear()
 		this.closeListener()
 
@@ -102,8 +103,8 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		return new Promise<void>((resolve) => {
 			dns.lookup(os.hostname(), (err, addr) => {
 				if (err) {
-					resolve()
-					return
+					this.log('warn', `Could not resolve local hostname for agentAddress, defaulting to 127.0.0.1: ${err.message}`)
+					return resolve()
 				}
 				this.agentAddress = addr
 				resolve()
@@ -126,6 +127,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 				if (err instanceof Error) this.log('error', `Could not initialize SNMP Trap listener: ${err.message}`)
 				else this.log('error', `Could not initialize SNMP Trap listener: ${err}`)
 			}
+			if (generation !== this.pollGeneration) return
 		}
 		if (this.config.walk) {
 			const walkPaths = this.config.walk.split(',').map((oid) => oid.trim())
@@ -175,10 +177,14 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 				this.statusManager.updateStatus(InstanceStatus.BadConfig, 'Missing community')
 				return
 			}
-
-			this.session = snmp.createSession(this.config.ip, this.config.community, options)
-			this.statusManager.updateStatus(InstanceStatus.Ok)
-			return
+			try {
+				this.session = snmp.createSession(this.config.ip, this.config.community, options)
+				this.statusManager.updateStatus(InstanceStatus.Ok)
+				return
+			} catch (err) {
+				this.log('error', `Failed to create SNMP session: ${err instanceof Error ? err.message : String(err)}`)
+				this.statusManager.updateStatus(InstanceStatus.UnknownError, 'Session creation failed')
+			}
 		}
 
 		// create v3 session
@@ -244,8 +250,13 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 			}
 		}
 
-		this.session = snmp.createV3Session(this.config.ip, user, options)
-		this.statusManager.updateStatus(InstanceStatus.Ok)
+		try {
+			this.session = snmp.createV3Session(this.config.ip, user, options)
+			this.statusManager.updateStatus(InstanceStatus.Ok)
+		} catch (err) {
+			this.log('error', `Failed to create SNMPv3 session: ${err instanceof Error ? err.message : String(err)}`)
+			this.statusManager.updateStatus(InstanceStatus.ConnectionFailure, 'Session creation failed')
+		}
 	}
 
 	private disconnectAgent(): void {
@@ -328,7 +339,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 				resolve()
 			})
 
-			this.listeningSocket.bind(this.config.portBind || 162, this.config.ip)
+			this.listeningSocket.bind(this.config.portBind || 162)
 		})
 	}
 
@@ -402,9 +413,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 
 	public async setOid(oid: string, type: snmp.ObjectType, value: snmp.VarbindValue): Promise<void> {
 		oid = trimOid(oid)
-		if (!isValidSnmpOid(oid) || oid.length == 0) {
-			throw new Error(`Invalid OID: ${oid}`)
-		}
+		if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID: ${oid}`)
 		await this.snmpQueue.add(
 			async () => {
 				return new Promise<void>((resolve, reject) => {
@@ -431,7 +440,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	public async getOid(...oids: string[]): Promise<void> {
 		oids = oids.reduce((acc: string[], oid) => {
 			oid = trimOid(oid)
-			if (!isValidSnmpOid(oid) || oid.length == 0) {
+			if (!isValidSnmpOid(oid)) {
 				this.log('warn', `Invalid OID skipped: ${oid}`)
 				return acc
 			}
@@ -469,10 +478,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 
 	public async walk(oid: string): Promise<void> {
 		oid = trimOid(oid)
-		if (!isValidSnmpOid(oid) || oid.length == 0) {
-			this.log('warn', `Invalid OID: ${oid}, walk cancelled`)
-			return
-		}
+		if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID: ${oid}, walk cancelled`)
 		return await this.snmpQueue.add(
 			async () => {
 				return new Promise<void>((resolve, reject) => {
@@ -580,7 +586,13 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	private async pollOids(): Promise<void> {
 		const generation = this.pollGeneration
 		const oids = this.oidTracker.getOidsToPoll
-		if (oids.length > 0) await this.getOid(...oids)
+		if (oids.length > 0) {
+			try {
+				await this.getOid(...oids)
+			} catch (err) {
+				this.log('warn', `Poll failed: ${err instanceof Error ? err.message : String(err)}`)
+			}
+		}
 
 		// Abort if configUpdated() or destory() fired while awaiting getOid
 		if (generation !== this.pollGeneration) return

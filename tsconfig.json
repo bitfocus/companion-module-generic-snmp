@@ -3,6 +3,7 @@
 	"include": ["src/**/*.ts", "vitest.config.ts"],
 	"exclude": ["node_modules/**"],
 	"compilerOptions": {
-		"types": ["node" /* , "jest" ] // uncomment this if using jest */]
+		"types": ["node" /* , "jest" ] // uncomment this if using jest */],
+		"alwaysStrict": true
 	}
 }

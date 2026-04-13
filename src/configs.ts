@@ -12,7 +12,7 @@ export type ModuleConfig = {
 	engineID: string
 	username: string
 	securityLevel: 'noAuthNoPriv' | 'authNoPriv' | 'authPriv'
-	authProtocol: 'md5' | 'sha'
+	authProtocol: 'md5' | 'sha' | 'sha224' | 'sha256' | 'sha384' | 'sha512'
 	privProtocol: 'aes' | 'aes256b' | 'aes256r' | 'des'
 	traps: boolean
 	portBind: number
@@ -31,8 +31,8 @@ export default function (isDesSelected: boolean): SomeCompanionConfigField[] {
 
 	const privProtocols = [
 		{ id: 'aes', label: '128-bit AES encryption (CFB-AES-128)' },
-		{ id: 'aes256b', label: '256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localiztaion' },
-		{ id: 'aes256r', label: '256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion' },
+		{ id: 'aes256b', label: '256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localization' },
+		{ id: 'aes256r', label: '256-bit AES encryption (CFB-AES-256) with "Reeder" key localization' },
 	]
 
 	// Only expose DES privProtocol only if process run with --openssl-legacy-provider flag, or if it is already selected.
@@ -88,6 +88,7 @@ export default function (isDesSelected: boolean): SomeCompanionConfigField[] {
 			label: 'Community',
 			default: 'companion',
 			isVisibleExpression: ` $(options:version) === 'v1' || $(options:version) === 'v2c'`,
+			regex: '/^[\\x20-\\x7E]{0,255}$/',
 		},
 		{
 			type: 'textinput',
@@ -95,7 +96,7 @@ export default function (isDesSelected: boolean): SomeCompanionConfigField[] {
 			width: 6,
 			label: 'Walk OIDs',
 			default: '',
-			description: 'Comma seperated list of OIDs to walk on init.',
+			description: 'Comma separated list of OIDs to walk on init.',
 			regex: '/^$|^(0|1|2)(\\.(0|[1-9]\\d*))+(?:,\\s*(0|1|2)(\\.(0|[1-9]\\d*))+)*$/',
 			minLength: 0,
 			multiline: true,
@@ -124,6 +125,8 @@ export default function (isDesSelected: boolean): SomeCompanionConfigField[] {
 			label: 'User Name',
 			default: 'companion',
 			isVisibleExpression: ` $(options:version) === 'v3'`,
+			minLength: 1,
+			regex: '/^[a-zA-Z0-9_\\-\\.]{1,32}$/',
 		},
 		{
 			type: 'dropdown',
@@ -144,8 +147,12 @@ export default function (isDesSelected: boolean): SomeCompanionConfigField[] {
 			label: 'Auth Protocol',
 			width: 6,
 			choices: [
-				{ id: 'md5', label: 'MD5 message authentication (HMAC-MD5-96)' },
-				{ id: 'sha', label: 'SHA message authentication (HMAC-SHA-96)' },
+				{ id: 'md5', label: 'MD5 message authentication (HMAC-MD5)' },
+				{ id: 'sha', label: 'SHA-1 message authentication (HMAC-SHA-1)' },
+				{ id: 'sha224', label: 'SHA-224 message authentication (HMAC-SHA-224)' },
+				{ id: 'sha256', label: 'SHA-256 message authentication (HMAC-SHA-256)' },
+				{ id: 'sha384', label: 'SHA-384 message authentication (HMAC-SHA-384)' },
+				{ id: 'sha512', label: 'SHA-512 message authentication (HMAC-SHA-512)' },
 			],
 			default: 'md5',
 			isVisibleExpression: ` $(options:version) === 'v3' && ( $(options:securityLevel) === 'authNoPriv' || $(options:securityLevel) === 'authPriv' )`,
@@ -157,6 +164,8 @@ export default function (isDesSelected: boolean): SomeCompanionConfigField[] {
 			width: 6,
 			default: '',
 			isVisibleExpression: ` $(options:version) === 'v3' && ( $(options:securityLevel) === 'authNoPriv' || $(options:securityLevel) === 'authPriv' )`,
+			minLength: 8,
+			regex: '/^.{8,255}$/',
 		},
 		{
 			type: 'dropdown',
@@ -182,6 +191,8 @@ export default function (isDesSelected: boolean): SomeCompanionConfigField[] {
 			width: 6,
 			default: '',
 			isVisibleExpression: ` $(options:version) === 'v3' && $(options:securityLevel) === 'authPriv' `,
+			minLength: 8,
+			regex: '/^.{8,255}$/',
 		},
 		{
 			type: 'checkbox',

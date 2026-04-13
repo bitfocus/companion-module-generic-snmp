@@ -37,7 +37,7 @@ export const isValidSnmpOid = (value: string): boolean => /^(0|1|2)(\.(0|[1-9]\d
  * @returns The buffer converted to a BigInt
  */
 export const bufferToBigInt = (buffer: Buffer, start = 0, end = buffer.length): bigint => {
-	const slice = buffer.slice(start, end)
+	const slice = buffer.subarray(start, end)
 	if (slice.length === 0) return 0n
 	return BigInt(`0x${slice.toString('hex')}`)
 }

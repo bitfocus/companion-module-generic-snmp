@@ -15,7 +15,7 @@ async function loadConfig() {
 	vi.mock('@companion-module/base', () => ({ Regex: { IP: '/^[\\d.]+$/' } }))
 	vi.mock('./oidUtils.js', () => ({ generateEngineId: vi.fn(() => 'aabbccdd05112233445566') }))
 	const mod = await import('./configs.js')
-	return mod.default()
+	return mod.default(false)
 }
 
 afterEach(() => {

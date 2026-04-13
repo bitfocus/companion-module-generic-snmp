@@ -214,20 +214,4 @@ describe(`${FeedbackId.GetOID} unsubscribe`, () => {
 		runUnsubscribe(self)
 		expect(self.oidTracker.removeFeedback).toHaveBeenCalledWith(FEEDBACK_ID)
 	})
-
-	it('calls oidTracker.removeFromPollGroup with the trimmed OID and feedback ID', () => {
-		runUnsubscribe(self)
-		expect(self.oidTracker.removeFromPollGroup).toHaveBeenCalledWith(VALID_OID, FEEDBACK_ID)
-	})
-
-	it('trims a leading dot from the OID before removing from poll group', () => {
-		runUnsubscribe(self, makeOptions({ oid: `.${VALID_OID}` }))
-		expect(self.oidTracker.removeFromPollGroup).toHaveBeenCalledWith(VALID_OID, FEEDBACK_ID)
-	})
-
-	it('calls both removeFeedback and removeFromPollGroup', () => {
-		runUnsubscribe(self)
-		expect(self.oidTracker.removeFeedback).toHaveBeenCalledOnce()
-		expect(self.oidTracker.removeFromPollGroup).toHaveBeenCalledOnce()
-	})
 })

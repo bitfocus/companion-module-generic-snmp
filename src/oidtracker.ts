@@ -145,6 +145,7 @@ export class FeedbackOidTracker {
 	clear(): void {
 		this.oidToFeedbacks.clear()
 		this.feedbackToOid.clear()
+		this.oidsToPoll.clear()
 	}
 
 	addToPollGroup(oid: string, id: string): void {
