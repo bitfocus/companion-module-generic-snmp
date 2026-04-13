@@ -194,6 +194,21 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
 			await self.getOid(oid)
 		},
+		learn: async ({ id, options }, _context) => {
+			const oid = trimOid(options.oid)
+			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${id}`)
+			await self.getOid(oid)
+			if (self.oidValues.has(oid) && self.oidValues.get(oid)?.type == snmp.ObjectType.Opaque) {
+				let val = self.oidValues.get(oid)?.value
+				if (Buffer.isBuffer(val)) {
+					val = val.toString(options.encoding)
+					return {
+						value: val,
+					}
+				}
+			}
+			return undefined
+		},
 	}
 	actionDefs[ActionId.SetNumber] = {
 		name: 'Set OID value to a Number',
