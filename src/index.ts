@@ -66,6 +66,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 
 	public async configUpdated(config: ModuleConfig, secrets: ModuleSecrets): Promise<void> {
 		this.pollGeneration++
+		this.oidValues.clear()
 		this.snmpQueue.clear()
 		this.closeListener()
 
