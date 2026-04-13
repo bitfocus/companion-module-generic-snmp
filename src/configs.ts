@@ -31,8 +31,8 @@ export default function (isDesSelected: boolean): SomeCompanionConfigField[] {
 
 	const privProtocols = [
 		{ id: 'aes', label: '128-bit AES encryption (CFB-AES-128)' },
-		{ id: 'aes256b', label: '256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localiztaion' },
-		{ id: 'aes256r', label: '256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion' },
+		{ id: 'aes256b', label: '256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localization' },
+		{ id: 'aes256r', label: '256-bit AES encryption (CFB-AES-256) with "Reeder" key localization' },
 	]
 
 	// Only expose DES privProtocol only if process run with --openssl-legacy-provider flag, or if it is already selected.
@@ -95,7 +95,7 @@ export default function (isDesSelected: boolean): SomeCompanionConfigField[] {
 			width: 6,
 			label: 'Walk OIDs',
 			default: '',
-			description: 'Comma seperated list of OIDs to walk on init.',
+			description: 'Comma separated list of OIDs to walk on init.',
 			regex: '/^$|^(0|1|2)(\\.(0|[1-9]\\d*))+(?:,\\s*(0|1|2)(\\.(0|[1-9]\\d*))+)*$/',
 			minLength: 0,
 			multiline: true,

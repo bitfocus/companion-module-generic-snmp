@@ -129,7 +129,7 @@ export class SharedUDPSocketWrapper extends EventEmitter {
 		address: string,
 		callback?: () => void,
 	): void {
-		this.logger.debug(`Sending messagee to ${address}`)
+		this.logger.debug(`Sending message to ${address}`)
 		this.sharedSocket.send(msg, offset, length, port, address, callback)
 	}
 
