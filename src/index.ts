@@ -177,10 +177,14 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 				this.statusManager.updateStatus(InstanceStatus.BadConfig, 'Missing community')
 				return
 			}
-
-			this.session = snmp.createSession(this.config.ip, this.config.community, options)
-			this.statusManager.updateStatus(InstanceStatus.Ok)
-			return
+			try {
+				this.session = snmp.createSession(this.config.ip, this.config.community, options)
+				this.statusManager.updateStatus(InstanceStatus.Ok)
+				return
+			} catch (err) {
+				this.log('error', `Failed to create SNMP session: ${err instanceof Error ? err.message : String(err)}`)
+				this.statusManager.updateStatus(InstanceStatus.UnknownError, 'Session creation failed')
+			}
 		}
 
 		// create v3 session
@@ -246,8 +250,13 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 			}
 		}
 
-		this.session = snmp.createV3Session(this.config.ip, user, options)
-		this.statusManager.updateStatus(InstanceStatus.Ok)
+		try {
+			this.session = snmp.createV3Session(this.config.ip, user, options)
+			this.statusManager.updateStatus(InstanceStatus.Ok)
+		} catch (err) {
+			this.log('error', `Failed to create SNMPv3 session: ${err instanceof Error ? err.message : String(err)}`)
+			this.statusManager.updateStatus(InstanceStatus.ConnectionFailure, 'Session creation failed')
+		}
 	}
 
 	private disconnectAgent(): void {
