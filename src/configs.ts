@@ -88,6 +88,7 @@ export default function (isDesSelected: boolean): SomeCompanionConfigField[] {
 			label: 'Community',
 			default: 'companion',
 			isVisibleExpression: ` $(options:version) === 'v1' || $(options:version) === 'v2c'`,
+			regex: '/^[\\x20-\\x7E]{0,255}$/',
 		},
 		{
 			type: 'textinput',
@@ -124,6 +125,8 @@ export default function (isDesSelected: boolean): SomeCompanionConfigField[] {
 			label: 'User Name',
 			default: 'companion',
 			isVisibleExpression: ` $(options:version) === 'v3'`,
+			minLength: 1,
+			regex: '/^[a-zA-Z0-9_\\-\\.]{1,32}$/',
 		},
 		{
 			type: 'dropdown',
@@ -161,6 +164,8 @@ export default function (isDesSelected: boolean): SomeCompanionConfigField[] {
 			width: 6,
 			default: '',
 			isVisibleExpression: ` $(options:version) === 'v3' && ( $(options:securityLevel) === 'authNoPriv' || $(options:securityLevel) === 'authPriv' )`,
+			minLength: 8,
+			regex: '/^.{8,255}$/',
 		},
 		{
 			type: 'dropdown',
@@ -186,6 +191,8 @@ export default function (isDesSelected: boolean): SomeCompanionConfigField[] {
 			width: 6,
 			default: '',
 			isVisibleExpression: ` $(options:version) === 'v3' && $(options:securityLevel) === 'authPriv' `,
+			minLength: 8,
+			regex: '/^.{8,255}$/',
 		},
 		{
 			type: 'checkbox',
