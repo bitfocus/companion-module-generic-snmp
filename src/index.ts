@@ -586,7 +586,13 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	private async pollOids(): Promise<void> {
 		const generation = this.pollGeneration
 		const oids = this.oidTracker.getOidsToPoll
-		if (oids.length > 0) await this.getOid(...oids)
+		if (oids.length > 0) {
+			try {
+				await this.getOid(...oids)
+			} catch (err) {
+				this.log('warn', `Poll failed: ${err instanceof Error ? err.message : String(err)}`)
+			}
+		}
 
 		// Abort if configUpdated() or destory() fired while awaiting getOid
 		if (generation !== this.pollGeneration) return
