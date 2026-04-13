@@ -12,7 +12,7 @@ export type ModuleConfig = {
 	engineID: string
 	username: string
 	securityLevel: 'noAuthNoPriv' | 'authNoPriv' | 'authPriv'
-	authProtocol: 'md5' | 'sha'
+	authProtocol: 'md5' | 'sha' | 'sha224' | 'sha256' | 'sha384' | 'sha512'
 	privProtocol: 'aes' | 'aes256b' | 'aes256r' | 'des'
 	traps: boolean
 	portBind: number
@@ -144,8 +144,12 @@ export default function (isDesSelected: boolean): SomeCompanionConfigField[] {
 			label: 'Auth Protocol',
 			width: 6,
 			choices: [
-				{ id: 'md5', label: 'MD5 message authentication (HMAC-MD5-96)' },
-				{ id: 'sha', label: 'SHA message authentication (HMAC-SHA-96)' },
+				{ id: 'md5', label: 'MD5 message authentication (HMAC-MD5)' },
+				{ id: 'sha', label: 'SHA-1 message authentication (HMAC-SHA-1)' },
+				{ id: 'sha224', label: 'SHA-224 message authentication (HMAC-SHA-224)' },
+				{ id: 'sha256', label: 'SHA-256 message authentication (HMAC-SHA-256)' },
+				{ id: 'sha384', label: 'SHA-384 message authentication (HMAC-SHA-384)' },
+				{ id: 'sha512', label: 'SHA-512 message authentication (HMAC-SHA-512)' },
 			],
 			default: 'md5',
 			isVisibleExpression: ` $(options:version) === 'v3' && ( $(options:securityLevel) === 'authNoPriv' || $(options:securityLevel) === 'authPriv' )`,
