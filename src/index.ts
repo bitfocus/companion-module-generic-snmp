@@ -328,7 +328,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 				resolve()
 			})
 
-			this.listeningSocket.bind(this.config.portBind || 162, this.config.ip)
+			this.listeningSocket.bind(this.config.portBind || 162)
 		})
 	}
 
