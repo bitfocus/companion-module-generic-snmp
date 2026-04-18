@@ -31,7 +31,11 @@ If you selected SNMP version `v3` you will also need to configure the following:
 4. Auth Protocol - The message authentication protocol. (Available if Security Lavel is `authNoPriv` or `authPriv`)
    - `No Auth` - use if your agent's security level is `noAuthNoPriv`
    - `MD5` - for MD5 message authentication (HMAC-MD5-96)
-   - `SHA` - for SHA message authentication (HMAC-SHA-96)
+   - `SHA` - for SHA-1 message authentication (HMAC-SHA-1)
+   - `SHA224` - for SHA-224 message authentication (HMAC-SHA-224)
+   - `SHA256` - for SHA-256 message authentication (HMAC-SHA-256)
+   - `SHA384` - for SHA-384 message authentication (HMAC-SHA-384)
+   - `SHA512` - for SHA-512 message authentication (HMAC-SHA-512)
 5. Auth Key - The message authentication key. (Available if Security Lavel is `authNoPriv` or `authPriv`)
 6. Priv Protocol - The encryption algorith. (Available if Security Lavel is `authPriv`)
    - `No Priv` - use if your agent's security level is `AuthNoPriv`
