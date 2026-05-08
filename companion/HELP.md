@@ -28,7 +28,7 @@ If you selected SNMP version `v3` you will also need to configure the following:
    - `noAuthNoPriv` - No message authentication or encryption
    - `authNoPriv` - Message authentication and no encryption
    - `authPriv` - Message authentication and encryption
-4. Auth Protocol - The message authentication protocol. (Available if Security Lavel is `authNoPriv` or `authPriv`)
+4. Auth Protocol - The message authentication protocol. (Available if Security Level is `authNoPriv` or `authPriv`)
    - `No Auth` - use if your agent's security level is `noAuthNoPriv`
    - `MD5` - for MD5 message authentication (HMAC-MD5-96)
    - `SHA` - for SHA-1 message authentication (HMAC-SHA-1)
@@ -36,14 +36,14 @@ If you selected SNMP version `v3` you will also need to configure the following:
    - `SHA256` - for SHA-256 message authentication (HMAC-SHA-256)
    - `SHA384` - for SHA-384 message authentication (HMAC-SHA-384)
    - `SHA512` - for SHA-512 message authentication (HMAC-SHA-512)
-5. Auth Key - The message authentication key. (Available if Security Lavel is `authNoPriv` or `authPriv`)
-6. Priv Protocol - The encryption algorith. (Available if Security Lavel is `authPriv`)
+5. Auth Key - The message authentication key. (Available if Security Level is `authNoPriv` or `authPriv`)
+6. Priv Protocol - The encryption algorith. (Available if Security Level is `authPriv`)
    - `No Priv` - use if your agent's security level is `AuthNoPriv`
    - `AES` - for 128-bit AES encryption (CFB-AES-128)'
    - `AES256B` - for 256-bit AES encryption (CFB-AES-256) with "Blumenthal" key localiztaion
    - `AES256R` - 256-bit AES encryption (CFB-AES-256) with "Reeder" key localiztaion
    - `DES` - for DES encryption (CBC-DES).
-7. `Priv Key` - Encryption Key (Available if Security Lavel is `authPriv`)
+7. `Priv Key` - Encryption Key (Available if Security Level is `authPriv`)
 
 ## Actions
 
