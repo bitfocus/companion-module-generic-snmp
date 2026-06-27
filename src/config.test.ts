@@ -11,9 +11,6 @@ vi.mock('./oidUtils.js', () => ({
 // Helper: import a fresh copy of the module so process.execArgv changes take effect
 async function loadConfig() {
 	vi.resetModules()
-	// Re-apply mocks after reset
-	vi.mock('@companion-module/base', () => ({ Regex: { IP: '/^[\\d.]+$/' } }))
-	vi.mock('./oidUtils.js', () => ({ generateEngineId: vi.fn(() => 'aabbccdd05112233445566') }))
 	const mod = await import('./configs.js')
 	return mod.default(false)
 }
