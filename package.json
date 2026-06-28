@@ -15,7 +15,7 @@
     "test": "vitest --run"
   },
   "dependencies": {
-    "@companion-module/base": "~2.1.0",
+    "@companion-module/base": "~2.1.1",
     "es-toolkit": "^1.48.1",
     "net-snmp": "^3.26.3",
     "p-queue": "^9.3.0"
@@ -23,7 +23,7 @@
   "devDependencies": {
     "@companion-module/tools": "^3.0.2",
     "@types/net-snmp": "^3.23.0",
-    "@types/node": "^26.0.0",
+    "@types/node": "^26.0.1",
     "eslint": "^10.5.0",
     "husky": "^9.1.7",
     "lint-staged": "17.0.8",
