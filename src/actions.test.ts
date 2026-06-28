@@ -152,13 +152,13 @@ describe(`${ActionId.SetString} learn`, () => {
 	})
 
 	it('returns the current value when OID exists with OctetString type', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.OctetString, value: 'current' } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.OctetString, value: 'current' })
 		const result = await runLearn(self, ActionId.SetString, { oid: VALID_OID })
 		expect(result).toEqual({ value: 'current' })
 	})
 
 	it('returns undefined when OID type does not match', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 })
 		const result = await runLearn(self, ActionId.SetString, { oid: VALID_OID })
 		expect(result).toBeUndefined()
 	})
@@ -229,14 +229,14 @@ describe(`${ActionId.SetNumber} learn`, () => {
 	it.each([snmp.ObjectType.Integer, snmp.ObjectType.Gauge, snmp.ObjectType.Counter, snmp.ObjectType.TimeTicks])(
 		'returns current value for type %s',
 		async (type) => {
-			self.oidValues.set(VALID_OID, { oid: VALID_OID, type, value: 42 } as any)
+			self.oidValues.set(VALID_OID, { oid: VALID_OID, type, value: 42 })
 			const result = await runLearn(self, ActionId.SetNumber, { oid: VALID_OID })
 			expect(result).toEqual({ value: 42 })
 		},
 	)
 
 	it('returns undefined when type does not match', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.OctetString, value: 'x' } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.OctetString, value: 'x' })
 		const result = await runLearn(self, ActionId.SetNumber, { oid: VALID_OID })
 		expect(result).toBeUndefined()
 	})
@@ -292,13 +292,13 @@ describe(`${ActionId.SetBoolean} learn`, () => {
 	})
 
 	it('returns the current boolean value', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Boolean, value: true } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Boolean, value: true })
 		const result = await runLearn(self, ActionId.SetBoolean, { oid: VALID_OID })
 		expect(result).toEqual({ value: true })
 	})
 
 	it('returns undefined when type does not match', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 })
 		const result = await runLearn(self, ActionId.SetBoolean, { oid: VALID_OID })
 		expect(result).toBeUndefined()
 	})
@@ -333,13 +333,13 @@ describe(`${ActionId.SetIpAddress} learn`, () => {
 	})
 
 	it('returns the current IP address value', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.IpAddress, value: '10.0.0.1' } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.IpAddress, value: '10.0.0.1' })
 		const result = await runLearn(self, ActionId.SetIpAddress, { oid: VALID_OID })
 		expect(result).toEqual({ value: '10.0.0.1' })
 	})
 
 	it('returns undefined when type does not match', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 })
 		const result = await runLearn(self, ActionId.SetIpAddress, { oid: VALID_OID })
 		expect(result).toBeUndefined()
 	})
@@ -374,13 +374,13 @@ describe(`${ActionId.SetOID} learn`, () => {
 	})
 
 	it('returns the current OID value as a string', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.OID, value: '1.3.6.1.9' } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.OID, value: '1.3.6.1.9' })
 		const result = await runLearn(self, ActionId.SetOID, { oid: VALID_OID })
 		expect(result).toEqual({ value: '1.3.6.1.9' })
 	})
 
 	it('returns undefined when type does not match', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 })
 		const result = await runLearn(self, ActionId.SetOID, { oid: VALID_OID })
 		expect(result).toBeUndefined()
 	})
@@ -397,60 +397,6 @@ describe(`${ActionId.GetOID} callback`, () => {
 	beforeEach(() => {
 		self = makeSelf()
 		context = makeContext()
-	})
-
-	it('calls getOid and sets the custom variable', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 7 } as any)
-		await runCallback(
-			self,
-			ActionId.GetOID,
-			{
-				oid: VALID_OID,
-				variable: 'myVar',
-				update: false,
-				displaystring: false,
-				div: 1,
-			},
-			context,
-		)
-		expect(self.getOid).toHaveBeenCalledWith(VALID_OID)
-		expect(context.setCustomVariableValue).toHaveBeenCalledWith('myVar', 7)
-	})
-
-	it('applies the divisor when setting the variable', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 100 } as any)
-		await runCallback(
-			self,
-			ActionId.GetOID,
-			{
-				oid: VALID_OID,
-				variable: 'myVar',
-				update: false,
-				displaystring: false,
-				div: 4,
-			},
-			context,
-		)
-		expect(context.setCustomVariableValue).toHaveBeenCalledWith('myVar', 25)
-	})
-
-	it('Throws error when setCustomVariableValue when variable is empty', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 } as any)
-		await expect(
-			runCallback(
-				self,
-				ActionId.GetOID,
-				{
-					oid: VALID_OID,
-					variable: '',
-					update: false,
-					displaystring: false,
-					div: 1,
-					encoding: 'base64',
-				},
-				context,
-			),
-		).rejects.toThrow(/No variable/)
 	})
 
 	it('throws when varbind is not found after get', async () => {
@@ -481,6 +427,71 @@ describe(`${ActionId.GetOID} callback`, () => {
 				div: 1,
 			}),
 		).rejects.toThrow(/Invalid OID/)
+	})
+})
+
+describe(`${ActionId.GetOID} callback — return value`, () => {
+	let self: ReturnType<typeof makeSelf>
+	let context: ReturnType<typeof makeContext>
+
+	beforeEach(() => {
+		self = makeSelf()
+		context = makeContext()
+	})
+
+	it('returns the integer value', async () => {
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 42 })
+		const result = await runCallback(
+			self,
+			ActionId.GetOID,
+			{ oid: VALID_OID, variable: 'myVar', update: false, div: 1, encoding: 'utf8' },
+			context,
+		)
+		expect(result).toBe(42)
+	})
+
+	it('returns a string value', async () => {
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.OctetString, value: 'hello' })
+		const result = await runCallback(
+			self,
+			ActionId.GetOID,
+			{ oid: VALID_OID, variable: 'myVar', update: false, div: 1, encoding: 'utf8' },
+			context,
+		)
+		expect(result).toBe('hello')
+	})
+
+	it('returns a boolean value', async () => {
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Boolean, value: true })
+		const result = await runCallback(
+			self,
+			ActionId.GetOID,
+			{ oid: VALID_OID, variable: 'myVar', update: false, div: 1, encoding: 'utf8' },
+			context,
+		)
+		expect(result).toBe(true)
+	})
+
+	it('applies divisor and returns the divided value', async () => {
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 100 })
+		const result = await runCallback(
+			self,
+			ActionId.GetOID,
+			{ oid: VALID_OID, variable: 'myVar', update: false, div: 4, encoding: 'utf8' },
+			context,
+		)
+		expect(result).toBe(25)
+	})
+
+	it('returns empty string when prepareVarbindForVariableAssignment returns null', async () => {
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Null, value: null })
+		const result = await runCallback(
+			self,
+			ActionId.GetOID,
+			{ oid: VALID_OID, variable: 'myVar', update: false, div: 1, encoding: 'utf8' },
+			context,
+		)
+		expect(result).toBe('')
 	})
 })
 
@@ -628,7 +639,7 @@ describe(`${ActionId.TrapOrInform} learn`, () => {
 	})
 
 	it('returns the object type when OID exists in cache', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 })
 		const result = await runLearn(self, ActionId.TrapOrInform, {
 			oidVarbind: VALID_OID,
 			objectType: snmp.ObjectType.Integer,
