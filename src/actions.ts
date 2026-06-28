@@ -78,11 +78,11 @@ export type ActionSchema = {
 	[ActionId.GetOID]: {
 		options: {
 			oid: string
-			variable: string
 			update: boolean
 			div: number
 			encoding: BufferEncoding
 		}
+		result: string | number | boolean
 	}
 	[ActionId.WalkOID]: {
 		options: {
@@ -449,18 +449,12 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 		name: 'Get OID value',
 		learnTimeout: 6000,
 		optionsToMonitorForSubscribe: ['oid'],
+		hasResult: true,
 		options: [
 			{
 				...OidDropdownOptions,
 				choices: self.getOidChoices(),
 				default: self.getOidChoices()[0]?.id ?? '',
-			},
-			{
-				type: 'custom-variable',
-				label: 'Variable',
-				id: 'variable',
-				description: 'Custom Variable that OID value is returned to',
-				disableAutoExpression: true,
 			},
 			{
 				type: 'checkbox',
@@ -472,16 +466,15 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 			DivisorOption,
 			EncodingOption,
 		],
-		callback: async (action, context) => {
-			if (!action.options.variable) throw new Error(`No variable selected: ${action.id}`)
+		callback: async (action, _context): Promise<string | number | boolean> => {
 			const oid = trimOid(action.options.oid)
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${action.id}`)
 			await self.getOid(oid)
 			const varbind = self.oidValues.get(oid)
 			if (varbind == undefined || varbind.value === undefined)
-				throw new Error(`Varbind not found, can't update custom variable ${action.options.variable}`)
+				throw new Error(`Varbind not found, can't return varbind value`)
 			const value = prepareVarbindForVariableAssignment(varbind, action.options.div, action.options.encoding) ?? ''
-			context.setCustomVariableValue(action.options.variable, value)
+			return value
 		},
 		subscribe: async (action, _context) => {
 			const oid = trimOid(action.options.oid)

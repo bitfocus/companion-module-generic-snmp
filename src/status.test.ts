@@ -207,6 +207,7 @@ describe('StatusManager', () => {
 
 	describe('isDestroyed guard', () => {
 		it('does not call parent updateStatus after destroy', async () => {
+			const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 			const self = makeSelf()
 			const manager = await makeManager(self)
 			manager.destroy()
@@ -217,6 +218,7 @@ describe('StatusManager', () => {
 			await vi.runAllTimersAsync()
 
 			expect(self.updateStatus).not.toHaveBeenCalled()
+			consoleSpy.mockRestore()
 		})
 
 		it('logs to console when updateStatus is called after destroy', async () => {

@@ -7,12 +7,13 @@ import {
 	type CompanionStaticUpgradeResult,
 	type CompanionUpgradeContext,
 	type CompanionStaticUpgradeScript,
+	CreateUseActionResultStoreUpgradeScript,
 	FixupNumericOrVariablesValueToExpressions,
 	type ExpressionOrValue,
-	// type JsonValue,
-	type JsonPrimitive,
 } from '@companion-module/base'
 import snmp from 'net-snmp'
+import { ActionId } from './actions.js'
+import { FeedbackId } from './feedbacks.js'
 
 function FixupOidOrExpressionValueToExpression(oid: string): ExpressionOrValue<string> {
 	const isOid = /^(\d+\.)+\d+$/.test(oid)
@@ -83,7 +84,7 @@ function v220(
 		updatedFeedbacks: [],
 	}
 	for (const action of props.actions) {
-		if (action.actionId === 'getOID') {
+		if (action.actionId === (ActionId.GetOID as string)) {
 			action.options.displaystring ??= { isExpression: false, value: false }
 			result.updatedActions.push(action)
 		}
@@ -150,7 +151,7 @@ function v300(
 	}
 
 	for (const feedback of props.feedbacks) {
-		if (feedback.feedbackId === 'getOID') {
+		if (feedback.feedbackId === (FeedbackId.GetOID as string)) {
 			if ('displaystring' in feedback.options) delete feedback.options.displaystring
 			feedback.options.oid = FixupOidOrExpressionValueToExpression(String(feedback.options.oid?.value))
 			feedback.options.div ??= { isExpression: false, value: 1 }
@@ -160,7 +161,7 @@ function v300(
 		}
 	}
 	for (const action of props.actions) {
-		if (action.actionId === 'setString') {
+		if (action.actionId === (ActionId.SetString as string)) {
 			if ('displaystring' in action.options) delete action.options.displaystring
 			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid?.value))
 			action.options.encoding ??= { isExpression: false, value: 'utf8' }
@@ -169,36 +170,36 @@ function v300(
 				value: String(action.options.value?.value),
 			}
 			result.updatedActions.push(action)
-		} else if (action.actionId === 'setNumber') {
+		} else if (action.actionId === (ActionId.SetNumber as string)) {
 			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid?.value))
 			action.options.type = {
 				isExpression: false,
-				value: (action.options.type?.value as unknown as JsonPrimitive) ?? snmp.ObjectType.Integer,
+				value: action.options.type?.value ?? snmp.ObjectType.Integer,
 			}
 			action.options.value = FixupNumericOrVariablesValueToExpressions({
 				isExpression: action.options.value?.isExpression ?? false,
 				value: String(action.options.value?.value),
 			})
 			result.updatedActions.push(action)
-		} else if (action.actionId === 'setBoolean') {
+		} else if (action.actionId === (ActionId.SetBoolean as string)) {
 			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid?.value))
 			action.options.value = FixupBooleanStringOrVariablesValueToExpression(String(action.options.value?.value))
 			result.updatedActions.push(action)
-		} else if (action.actionId === 'setIpAddress') {
+		} else if (action.actionId === (ActionId.SetIpAddress as string)) {
 			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid?.value))
 			action.options.value = {
 				isExpression: action.options.value?.isExpression ?? false,
 				value: String(action.options.value?.value),
 			}
 			result.updatedActions.push(action)
-		} else if (action.actionId === 'setOID') {
+		} else if (action.actionId === (ActionId.SetOID as string)) {
 			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid?.value))
 			action.options.value = {
 				isExpression: action.options.value?.isExpression ?? false,
 				value: String(action.options.value?.value),
 			}
 			result.updatedActions.push(action)
-		} else if (action.actionId === 'getOID') {
+		} else if (action.actionId === (ActionId.GetOID as string)) {
 			action.options.oid = FixupOidOrExpressionValueToExpression(String(action.options.oid?.value))
 			action.options.encoding ??= { isExpression: false, value: 'utf8' }
 			action.options.div ??= { isExpression: false, value: 1 }
@@ -209,10 +210,22 @@ function v300(
 	return result
 }
 
+function v310(
+	_context: CompanionUpgradeContext<ModuleConfig>,
+	props: CompanionStaticUpgradeProps<ModuleConfig, ModuleSecrets>,
+): CompanionStaticUpgradeResult<ModuleConfig, ModuleSecrets> {
+	const upgrade = CreateUseActionResultStoreUpgradeScript<ModuleConfig>({
+		[ActionId.GetOID]: 'variable',
+	})(_context, props as unknown as CompanionStaticUpgradeProps<ModuleConfig, undefined>)
+
+	return upgrade as unknown as CompanionStaticUpgradeResult<ModuleConfig, ModuleSecrets>
+}
+
 export const UpgradeScripts: CompanionStaticUpgradeScript<ModuleConfig, ModuleSecrets>[] = [
 	pre200,
 	v210,
 	v220,
 	v230,
 	v300,
+	v310,
 ]
