@@ -1112,9 +1112,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"es-toolkit@npm:^1.48.1":
-  version: 1.48.1
-  resolution: "es-toolkit@npm:1.48.1"
+"es-toolkit@npm:^1.49.0":
+  version: 1.49.0
+  resolution: "es-toolkit@npm:1.49.0"
   dependenciesMeta:
     "@trivago/prettier-plugin-sort-imports@4.3.0":
       unplugged: true
@@ -1122,7 +1122,7 @@ __metadata:
       unplugged: true
     vitepress-plugin-sandpack@1.1.4:
       unplugged: true
-  checksum: 10c0/29bfccb8aaf088f27ea91b5bf6448b8a46ef5d809139ad9335bea6919d0bc3aadc3206c957ab6c72d65864906fd75cf9ab41fbd936aaf69e58c6259d2821187d
+  checksum: 10c0/ab0864bb0c5c494ed09043d53a74b58a0ab9df1b89b9b54bce72a63de2869152d7d65e489dc89ab671f0fea243728922c8a8f8c873f1b2a53350a23360b3e2df
   languageName: node
   linkType: hard
 
@@ -1568,13 +1568,13 @@ __metadata:
     "@companion-module/tools": "npm:^3.0.2"
     "@types/net-snmp": "npm:^3.23.0"
     "@types/node": "npm:^26.0.1"
-    es-toolkit: "npm:^1.48.1"
+    es-toolkit: "npm:^1.49.0"
     eslint: "npm:^10.5.0"
     husky: "npm:^9.1.7"
     lint-staged: "npm:17.0.8"
     net-snmp: "npm:^3.26.3"
     p-queue: "npm:^9.3.0"
-    prettier: "npm:^3.8.4"
+    prettier: "npm:^3.8.5"
     rimraf: "npm:^6.1.3"
     typescript: "npm:^6.0.3"
     typescript-eslint: "npm:^8.62.0"
@@ -2349,12 +2349,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.8.4":
-  version: 3.8.4
-  resolution: "prettier@npm:3.8.4"
+"prettier@npm:^3.8.5":
+  version: 3.8.5
+  resolution: "prettier@npm:3.8.5"
   bin:
     prettier: bin/prettier.cjs
-  checksum: 10c0/b90a0cbe75b88ac0af9c13fe0f359bd19926fabccd88483227b21f71f0c1cc42da056fc1ac3a361e665577c568371d5ccfb2c62c31c8a1186f8d1bd531a063e9
+  checksum: 10c0/57ba3cd8ddc0cebcb31038f09081da5c8633ff1823ff5e5cf3496918b3b839f76a21e06050fd1a2c41547f44fedea2c28d7a4a26f0b2ed40eb60428c54c297ea
   languageName: node
   linkType: hard
 
