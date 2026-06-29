@@ -221,6 +221,28 @@ function v310(
 	return upgrade as unknown as CompanionStaticUpgradeResult<ModuleConfig, ModuleSecrets>
 }
 
+function v311(
+	_context: CompanionUpgradeContext<ModuleConfig>,
+	props: CompanionStaticUpgradeProps<ModuleConfig, ModuleSecrets>,
+): CompanionStaticUpgradeResult<ModuleConfig, ModuleSecrets> {
+	const result: CompanionStaticUpgradeResult<ModuleConfig, ModuleSecrets> = {
+		updatedActions: [],
+		updatedConfig: null,
+		updatedSecrets: null,
+		updatedFeedbacks: [],
+	}
+
+	for (const action of props.actions) {
+		if (action.actionId === (ActionId.GetOID as string)) {
+			if ('update' in action.options) {
+				delete action.options.update
+				result.updatedActions.push(action)
+			}
+		}
+	}
+	return result
+}
+
 export const UpgradeScripts: CompanionStaticUpgradeScript<ModuleConfig, ModuleSecrets>[] = [
 	pre200,
 	v210,
@@ -228,4 +250,5 @@ export const UpgradeScripts: CompanionStaticUpgradeScript<ModuleConfig, ModuleSe
 	v230,
 	v300,
 	v310,
+	v311,
 ]

@@ -78,7 +78,6 @@ export type ActionSchema = {
 	[ActionId.GetOID]: {
 		options: {
 			oid: string
-			update: boolean
 			div: number
 			encoding: BufferEncoding
 		}
@@ -456,13 +455,6 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 				choices: self.getOidChoices(),
 				default: self.getOidChoices()[0]?.id ?? '',
 			},
-			{
-				type: 'checkbox',
-				label: 'Update',
-				id: 'update',
-				description: 'Update each poll interval',
-				default: false,
-			},
 			DivisorOption,
 			EncodingOption,
 		],
@@ -479,9 +471,6 @@ export default function (self: Generic_SNMP): CompanionActionDefinitions<ActionS
 		subscribe: async (action, _context) => {
 			const oid = trimOid(action.options.oid)
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to action: ${action.id}`)
-			if (action.options.update) {
-				self.oidTracker.addToPollGroup(oid, action.id)
-			} else self.oidTracker.removeFromPollGroup(oid, action.id)
 			await self.getOid(oid)
 		},
 		learn: async (action, _context) => {

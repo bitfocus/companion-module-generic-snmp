@@ -49,8 +49,7 @@ If you selected SNMP version `v3` you will also need to configure the following:
 
 You can perform the following actions with this module:
 
-- Get OID value, return to custom variable
-  - Optional update based on connection poll
+- Get OID value, return to custom or local variable
   - `OctetString` and `Opaque` OIDs converted to strings with the encoding option
   - Numeric values may be divided by the `Factor` field to achieved fixed precision decimal values
   - `Counter64` OIDs returned as strings
