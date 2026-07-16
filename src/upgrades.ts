@@ -214,11 +214,11 @@ function v310(
 	_context: CompanionUpgradeContext<ModuleConfig>,
 	props: CompanionStaticUpgradeProps<ModuleConfig, ModuleSecrets>,
 ): CompanionStaticUpgradeResult<ModuleConfig, ModuleSecrets> {
-	const upgrade = CreateUseActionResultStoreUpgradeScript<ModuleConfig>({
+	const upgrade = CreateUseActionResultStoreUpgradeScript<ModuleConfig, ModuleSecrets>({
 		[ActionId.GetOID]: 'variable',
-	})(_context, props as unknown as CompanionStaticUpgradeProps<ModuleConfig, undefined>)
+	})(_context, props)
 
-	return upgrade as unknown as CompanionStaticUpgradeResult<ModuleConfig, ModuleSecrets>
+	return upgrade
 }
 
 function v311(
