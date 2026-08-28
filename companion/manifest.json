@@ -6,7 +6,7 @@
 	"shortname": "snmp",
 	"description": "A generic SNMP module for Companion",
 	"version": "0.0.0",
-	"license": "ISC",
+	"license": "MIT",
 	"repository": "git+https://github.com/bitfocus/companion-module-generic-snmp.git",
 	"bugs": "https://github.com/bitfocus/companion-module-generic-snmp/issues",
 	"maintainers": [
@@ -30,6 +30,11 @@
 		}
 	},
 	"manufacturer": "Generic",
-	"products": ["SNMP Requests"],
-	"keywords": ["Protocol", "Generic"]
+	"products": [
+		"SNMP Requests"
+	],
+	"keywords": [
+		"Protocol",
+		"Generic"
+	]
 }
