@@ -1,7 +1,7 @@
 {
 	"$schema": "../node_modules/@companion-module/base/assets/manifest.schema.json",
 	"id": "generic-snmp",
-	"name": "generic-snmp",
+	"name": "Generic SNMP",
 	"type": "connection",
 	"shortname": "snmp",
 	"description": "A generic SNMP module for Companion",
