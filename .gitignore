@@ -6,6 +6,7 @@ package-lock.json
 /pkg.tgz
 /dist
 dist/
+/coverage
 generic-snmp-*.tgz
 DEBUG-*
 *.zip

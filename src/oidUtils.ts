@@ -168,7 +168,7 @@ export const validateVarbinds = (varbinds: snmp.Varbind[]): snmp.Varbind[] => {
 		try {
 			return validateAndConvertVarbind(varbind)
 		} catch (error) {
-			if (error instanceof Error) throw new Error(`Varbind at index ${index}: ${error.message}`)
+			if (error instanceof Error) throw new Error(`Varbind at index ${index}: ${error.message}`, { cause: error })
 			throw error
 		}
 	})

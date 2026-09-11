@@ -1,6 +1,6 @@
 import snmp from 'net-snmp'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import UpdateFeedbacks, { FeedbackId } from './feedbacks.js'
+import UpdateFeedbacks, { FeedbackId } from '../feedbacks.js'
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -8,7 +8,7 @@ import UpdateFeedbacks, { FeedbackId } from './feedbacks.js'
 
 vi.mock('@companion-module/base', () => ({}))
 
-vi.mock('./options.js', () => ({
+vi.mock('../options.js', () => ({
 	OidDropdownOptions: { type: 'textinput', id: 'oid', label: 'OID' },
 	DivisorOption: { type: 'number', id: 'div', label: 'Divisor', default: 1 },
 	DisplayStringOption: { type: 'checkbox', id: 'displaystring', label: 'Display String', default: false },
@@ -51,14 +51,25 @@ function makeOptions(overrides: Partial<{ oid: string; div: number; displaystrin
 	return { oid: VALID_OID, div: 1, displaystring: false, update: false, ...overrides }
 }
 
-async function runCallback(self: Self, options = makeOptions(), id = FEEDBACK_ID) {
-	const feedback = getFeedback(self)
-	return feedback.callback({ id, options } as any, {} as any)
+/**
+ * Stand in for the feedback context. The live one always supplies a signal, which
+ * aborts when the result is no longer needed, and the callbacks forward it to getOid.
+ */
+function makeContext(overrides = {}) {
+	return {
+		signal: new AbortController().signal,
+		...overrides,
+	}
 }
 
-async function runLearn(self: Self, options = makeOptions(), id = FEEDBACK_ID) {
+async function runCallback(self: Self, options = makeOptions(), id = FEEDBACK_ID, context = makeContext()) {
 	const feedback = getFeedback(self)
-	return feedback.learn?.({ id, options } as any, {} as any)
+	return feedback.callback({ id, options } as any, context as any)
+}
+
+async function runLearn(self: Self, options = makeOptions(), id = FEEDBACK_ID, context = makeContext()) {
+	const feedback = getFeedback(self)
+	return feedback.learn?.({ id, options } as any, context as any)
 }
 
 function runUnsubscribe(self: Self, options = makeOptions(), id = FEEDBACK_ID) {
@@ -102,19 +113,19 @@ describe(`${FeedbackId.GetOID} callback`, () => {
 	})
 
 	it('calls oidTracker.updateFeedback with the correct arguments', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 5 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 5 })
 		await runCallback(self)
 		expect(self.oidTracker.updateFeedback).toHaveBeenCalledWith(FEEDBACK_ID, VALID_OID, false)
 	})
 
 	it('passes the update flag through to updateFeedback', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 5 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 5 })
 		await runCallback(self, makeOptions({ update: true }))
 		expect(self.oidTracker.updateFeedback).toHaveBeenCalledWith(FEEDBACK_ID, VALID_OID, true)
 	})
 
 	it('returns the varbind value when already cached', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 42 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 42 })
 		const result = await runCallback(self)
 		expect(result).toBe(42)
 	})
@@ -122,27 +133,27 @@ describe(`${FeedbackId.GetOID} callback`, () => {
 	it('calls getOid and logs when OID is not yet cached', async () => {
 		// getOid won't populate oidValues by itself in the mock, so we simulate it
 		self.getOid = vi.fn().mockImplementation(async () => {
-			self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 7 } as any)
+			self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 7 })
 		})
 		await runCallback(self)
-		expect(self.getOid).toHaveBeenCalledWith(VALID_OID)
+		expect(self.getOid).toHaveBeenCalledWith([VALID_OID], expect.any(AbortSignal))
 		expect(self.log).toHaveBeenCalledWith('info', expect.stringContaining(VALID_OID))
 	})
 
 	it('does not call getOid when OID is already cached', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 })
 		await runCallback(self)
 		expect(self.getOid).not.toHaveBeenCalled()
 	})
 
 	it('applies the divisor when returning a numeric value', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 100 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 100 })
 		const result = await runCallback(self, makeOptions({ div: 4 }))
 		expect(result).toBe(25)
 	})
 
 	it('strips a leading dot from the OID before lookup', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 3 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 3 })
 		await runCallback(self, makeOptions({ oid: `.${VALID_OID}` }))
 		expect(self.oidTracker.updateFeedback).toHaveBeenCalledWith(FEEDBACK_ID, VALID_OID, false)
 	})
@@ -180,11 +191,11 @@ describe(`${FeedbackId.GetOID} learn`, () => {
 
 	it('calls getOid', async () => {
 		await runLearn(self)
-		expect(self.getOid).toHaveBeenCalledWith(VALID_OID)
+		expect(self.getOid).toHaveBeenCalledWith([VALID_OID], expect.any(AbortSignal))
 	})
 
 	it('always returns undefined', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 })
 		const result = await runLearn(self)
 		expect(result).toBeUndefined()
 	})

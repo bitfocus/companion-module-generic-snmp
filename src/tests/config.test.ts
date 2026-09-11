@@ -4,14 +4,14 @@ vi.mock('@companion-module/base', () => ({
 	Regex: { IP: '/^[\\d.]+$/' },
 }))
 
-vi.mock('./oidUtils.js', () => ({
+vi.mock('../oidUtils.js', () => ({
 	generateEngineId: vi.fn(() => 'aabbccdd05112233445566'),
 }))
 
 // Helper: import a fresh copy of the module so process.execArgv changes take effect
 async function loadConfig() {
 	vi.resetModules()
-	const mod = await import('./configs.js')
+	const mod = await import('../configs.js')
 	return mod.default(false)
 }
 

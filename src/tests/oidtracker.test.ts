@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { FeedbackOidTracker } from './oidtracker.js'
+import { FeedbackOidTracker } from '../oidtracker.js'
 
 const OID_A = '1.3.6.1.2.1'
 const OID_B = '1.3.6.1.2.2'

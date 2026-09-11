@@ -12,6 +12,7 @@ import GetConfigFields from './configs.js'
 import type { ModuleConfig, ModuleSecrets } from './configs.js'
 import UpdateActions from './actions.js'
 import UpdateFeedbacks, { FeedbackId } from './feedbacks.js'
+import { GetVariableDefinitions, GetVariableValues } from './variables.js'
 import { UpgradeScripts } from './upgrades.js'
 import { StatusManager } from './status.js'
 import type { InstanceBaseExt, ModuleTypes } from './types.js'
@@ -33,6 +34,8 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	public oidValues: Map<string, snmp.Varbind> = new Map()
 	/** Set of Feedback IDs to be checked after throttle interval */
 	private feedbackIdsToCheck: Set<string> = new Set()
+	/** Set of OIDs whose connection variable needs republishing after throttle interval */
+	private variableOidsToUpdate: Set<string> = new Set()
 	public oidTracker = new FeedbackOidTracker()
 	private snmpQueue = new PQueue({ concurrency: 1, interval: 10, intervalCap: 1 })
 	private agentAddress = '127.0.0.1'
@@ -59,27 +62,23 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		this.secrets = secrets
 		this.updateActions()
 		this.updateFeedbacks()
+		this.updateVariableDefinitions()
 
 		await this.setAgentAddress()
 		await this.initializeConnection()
 	}
 
 	public async configUpdated(config: ModuleConfig, secrets: ModuleSecrets): Promise<void> {
-		this.pollGeneration++
-		this.oidValues.clear()
-		this.snmpQueue.clear()
-		this.closeListener()
-
-		if (this.pollTimer) {
-			clearTimeout(this.pollTimer)
-			delete this.pollTimer
-		}
+		this.resetConnectionState()
 
 		this.config = config
 		this.secrets = secrets
 
 		this.updateActions()
 		this.updateFeedbacks()
+		// oidValues was cleared above, so this also drops definitions for OIDs that
+		// are no longer cached, and clears the lot if the option has been turned off
+		this.updateVariableDefinitions()
 
 		await this.initializeConnection()
 	}
@@ -87,15 +86,30 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	public async destroy(): Promise<void> {
 		this.log('debug', `destroy ${this.id}:${this.label}`)
 		this.statusManager.destroy()
+		this.resetConnectionState()
+		this.disconnectAgent()
+	}
+
+	/**
+	 * Drops everything tied to the current session: the cached OIDs, queued and pending
+	 * SNMP requests, the poll timer, and the trap listener.
+	 *
+	 * Does not close the SNMP session itself: destroy calls disconnectAgent for that,
+	 * while configUpdated leaves it to connectAgent, which replaces the session anyway.
+	 */
+	private resetConnectionState(): void {
 		this.pollGeneration++
+		this.oidValues.clear()
 		this.snmpQueue.clear()
-		this.throttledFeedbackIdCheck.cancel()
 		this.debouncedUpdateDefinitions.cancel()
+		this.debouncedUpdateVariableDefinitions.cancel()
+		this.throttledFeedbackIdCheck.cancel()
+		this.throttledUpdateVariableValues.cancel()
+		this.variableOidsToUpdate.clear()
 		if (this.pollTimer) {
 			clearTimeout(this.pollTimer)
 			delete this.pollTimer
 		}
-		this.disconnectAgent()
 		this.closeListener()
 	}
 
@@ -396,7 +410,14 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 			)
 			const isNew = !this.oidValues.has(varbind.oid)
 			this.oidValues.set(varbind.oid, varbind)
-			if (isNew) this.debouncedUpdateDefinitions()
+			if (isNew) {
+				this.debouncedUpdateDefinitions()
+				if (this.config.variables) this.debouncedUpdateVariableDefinitions()
+			}
+			if (this.config.variables) {
+				this.variableOidsToUpdate.add(varbind.oid)
+				this.throttledUpdateVariableValues()
+			}
 			this.oidTracker.getFeedbackIdsForOid(varbind.oid).forEach((id) => this.feedbackIdsToCheck.add(id))
 			if (this.feedbackIdsToCheck.size > 0) this.throttledFeedbackIdCheck()
 		}
@@ -411,7 +432,12 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 * @throws If the OID is invalid or the SNMP set operation fails
 	 */
 
-	public async setOid(oid: string, type: snmp.ObjectType, value: snmp.VarbindValue): Promise<void> {
+	public async setOid(
+		oid: string,
+		type: snmp.ObjectType,
+		value: snmp.VarbindValue,
+		signal?: AbortSignal,
+	): Promise<void> {
 		oid = trimOid(oid)
 		if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID: ${oid}`)
 		await this.snmpQueue.add(
@@ -426,18 +452,19 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 					})
 				})
 			},
-			{ priority: 1 },
+			{ priority: 1, signal },
 		)
 	}
 
 	/**
 	 * Get an SNMP OID value from the target device
 	 *
-	 * @param oids - The SNMP OID or array of OIDs to get
+	 * @param oids - The SNMP OIDs to get
+	 * @param signal - Optional AbortSignal to drop the request from the queue
 	 * @throws If the OID is invalid or the SNMP get operation fails
 	 */
 
-	public async getOid(...oids: string[]): Promise<void> {
+	public async getOid(oids: string[], signal?: AbortSignal): Promise<void> {
 		oids = oids.reduce((acc: string[], oid) => {
 			oid = trimOid(oid)
 			if (!isValidSnmpOid(oid)) {
@@ -465,7 +492,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 					})
 				})
 			},
-			{ priority: 0 },
+			{ priority: 0, signal },
 		)
 	}
 
@@ -476,7 +503,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 * @throws {Error} If the OID is invalid or the SNMP walk operation fails
 	 */
 
-	public async walk(oid: string): Promise<void> {
+	public async walk(oid: string, signal?: AbortSignal): Promise<void> {
 		oid = trimOid(oid)
 		if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID: ${oid}, walk cancelled`)
 		return await this.snmpQueue.add(
@@ -494,7 +521,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 					this.session.walk(oid, feedCb, doneCb)
 				})
 			},
-			{ priority: 0 },
+			{ priority: 0, signal },
 		)
 	}
 
@@ -508,7 +535,11 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 * @returns Resolves when the inform is acknowledged, or rejects on error.
 	 */
 
-	public async sendInform(typeOrOid: snmp.TrapType | string, ...varbinds: snmp.Varbind[]): Promise<void> {
+	public async sendInform(
+		typeOrOid: snmp.TrapType | string,
+		varbinds: snmp.Varbind[] = [],
+		signal?: AbortSignal,
+	): Promise<void> {
 		return await this.snmpQueue.add(
 			async () => {
 				return new Promise<void>((resolve, reject) => {
@@ -530,7 +561,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 					})
 				})
 			},
-			{ priority: 2 },
+			{ priority: 2, signal },
 		)
 	}
 	/**
@@ -542,7 +573,11 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 *   to include with the trap. Only used when `typeOrOid` is an OID string.
 	 * @returns Resolves when the trap is sent, or rejects on error.
 	 */
-	public async sendTrap(typeOrOid: snmp.TrapType | string, ...varbinds: snmp.Varbind[]): Promise<void> {
+	public async sendTrap(
+		typeOrOid: snmp.TrapType | string,
+		varbinds: snmp.Varbind[] = [],
+		signal?: AbortSignal,
+	): Promise<void> {
 		return await this.snmpQueue.add(
 			async () => {
 				return new Promise<void>((resolve, reject) => {
@@ -565,7 +600,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 					})
 				})
 			},
-			{ priority: 3 },
+			{ priority: 3, signal },
 		)
 	}
 
@@ -583,12 +618,31 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 			}))
 	}
 
+	/**
+	 * The set of OIDs a poll should request.
+	 *
+	 * Normally this is just the OIDs a feedback is watching. With connection variables
+	 * enabled every cached OID is polled as well, since each one is published as a
+	 * variable that needs refreshing.
+	 *
+	 * The feedback OIDs stay in the list either way. An OID a feedback watches is not
+	 * necessarily in oidValues, because a varbind that came back NoSuchObject,
+	 * NoSuchInstance or EndOfMibView is deliberately not cached, and one that has never
+	 * been reached has nothing to cache. Polling oidValues alone would drop those OIDs
+	 * permanently and the feedback could never recover.
+	 */
+	private getOidsToPoll(): string[] {
+		const trackedOids = this.oidTracker.getOidsToPoll
+		if (!this.config.variables) return trackedOids
+		return Array.from(new Set([...this.oidValues.keys(), ...trackedOids]))
+	}
+
 	private async pollOids(): Promise<void> {
 		const generation = this.pollGeneration
-		const oids = this.oidTracker.getOidsToPoll
+		const oids = this.getOidsToPoll()
 		if (oids.length > 0) {
 			try {
-				await this.getOid(...oids)
+				await this.getOid(oids)
 			} catch (err) {
 				this.log('warn', `Poll failed: ${err instanceof Error ? err.message : String(err)}`)
 			}
@@ -621,6 +675,50 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	private updateFeedbacks(): void {
 		this.setFeedbackDefinitions(UpdateFeedbacks(this))
 	}
+
+	/**
+	 * Publishes a connection variable for every cached OID, and seeds their values.
+	 *
+	 * Definitions without values would leave the variables blank until the first poll
+	 * completes, and with polling turned off they would stay blank forever, so the
+	 * current cache contents are published at the same time.
+	 */
+	private updateVariableDefinitions(): void {
+		this.setVariableDefinitions(GetVariableDefinitions(this))
+		this.updateVariableValues()
+	}
+
+	private updateVariableValues(): void {
+		this.setVariableValues(GetVariableValues(this))
+	}
+
+	/**
+	 * Republishes the connection variables for the OIDs cached since the last run.
+	 *
+	 * Every varbind reaching the cache queues its own OID, whether it arrived from a
+	 * poll, a trap, an inform or a get, so a value that changes between polls is not
+	 * left stale. The throttle only coalesces the burst a walk or a multi OID get
+	 * produces; it is deliberately short, matching throttledFeedbackIdCheck, because
+	 * the payload is a handful of OIDs rather than the whole cache.
+	 */
+	private throttledUpdateVariableValues = throttle(
+		() => {
+			this.setVariableValues(GetVariableValues(this, this.variableOidsToUpdate))
+			this.variableOidsToUpdate.clear()
+		},
+		30,
+		{ edges: ['trailing'] },
+	)
+
+	/**
+	 * Debounced function that updates the connection variable definitions.
+	 *
+	 * Kept separate from debouncedUpdateDefinitions, and on a shorter delay, so a walk
+	 * publishes its variables promptly without redefining them once per returned varbind.
+	 */
+	private debouncedUpdateVariableDefinitions = debounce(() => {
+		this.updateVariableDefinitions()
+	}, 500)
 
 	/**
 	 * Debounced function that updates action and feedback definitions.

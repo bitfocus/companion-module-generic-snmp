@@ -2,7 +2,7 @@ import { EventEmitter } from 'events'
 import { RemoteInfo } from 'dgram'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { ModuleLogger } from '@companion-module/base'
-import { SharedUDPSocketWrapper } from './wrapper.js'
+import { SharedUDPSocketWrapper } from '../wrapper.js'
 
 // ---------------------------------------------------------------------------
 // Minimal SharedUdpSocket mock
@@ -25,7 +25,7 @@ function createMockLogger(): ModuleLogger {
 		warn: vi.fn(),
 		error: vi.fn(),
 		debug: vi.fn(),
-	} as unknown as ModuleLogger
+	}
 }
 
 type MockSocket = ReturnType<typeof createMockSocket>
