@@ -13,6 +13,7 @@ To configure this module you will need:
 5. Listening Port - Port to listen for traps and informs on. The module will ignore messages from IPs other than the configured Agent Address.
 6. Poll Interval - The poll interval for Get OID value actions with update enabled, and _all_ Get OID Value feedbacks.
 7. Walk OIDs - If populated, the agent will walk the MIB starting at the OIDs in this comma seperated list.
+8. Connection Variables - Create connection variables for all cached OIDs, they will be polled each interval
 
 ### SNMP versions v1/v2c
 
