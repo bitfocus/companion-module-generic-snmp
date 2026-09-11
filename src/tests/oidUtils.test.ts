@@ -9,7 +9,7 @@ import {
 	trimOid,
 	validateAndConvertVarbind,
 	validateVarbinds,
-} from './oidUtils.js'
+} from '../oidUtils.js'
 
 // ---------------------------------------------------------------------------
 // trimOid
@@ -270,7 +270,7 @@ describe('validateAndConvertVarbind', () => {
 
 	// Unsupported type
 	it('throws on an unsupported ObjectType', () => {
-		expect(() => validateAndConvertVarbind(varbind(999 as snmp.ObjectType, 'x'))).toThrow(/Unsupported ObjectType/)
+		expect(() => validateAndConvertVarbind(varbind(999, 'x'))).toThrow(/Unsupported ObjectType/)
 	})
 })
 

@@ -12,7 +12,8 @@ export default defineConfig({
 			reportsDirectory: './coverage',
 			include: ['src/**/*.ts'],
 			exclude: [
-				'src/**/*.test.ts',
+				// Tests and any helpers/fixtures beside them, not shipped code
+				'src/tests/**',
 				// Type-only modules, no runtime code to exercise
 				'src/types.ts',
 				'src/net-snmp.d.ts',

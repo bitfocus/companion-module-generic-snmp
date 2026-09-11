@@ -24,19 +24,19 @@ vi.mock('@companion-module/base', () => {
 	}
 })
 
-vi.mock('./configs.js', () => ({
+vi.mock('../configs.js', () => ({
 	default: () => [],
 }))
 
-vi.mock('./actions.js', () => ({ default: () => ({}) }))
-vi.mock('./feedbacks.js', () => ({ default: () => ({}) }))
-vi.mock('./upgrades.js', () => ({ default: [] }))
+vi.mock('../actions.js', () => ({ default: () => ({}) }))
+vi.mock('../feedbacks.js', () => ({ default: () => ({}) }))
+vi.mock('../upgrades.js', () => ({ default: [] }))
 
 vi.mock('dns', () => ({
 	default: { lookup: vi.fn((_host, cb) => cb(null, '127.0.0.1')) },
 }))
 
-import Generic_SNMP from './index.js'
+import Generic_SNMP from '../index.js'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -193,7 +193,7 @@ describe('handleVarbind', () => {
 		const errorVarbind = { oid: '1.3.6.1.1', type: snmp.ObjectType.NoSuchObject, value: null }
 		vi.spyOn(snmp, 'isVarbindError').mockReturnValueOnce(true)
 		vi.spyOn(snmp, 'varbindError').mockReturnValueOnce('some error')
-		handle(instance, errorVarbind as snmp.Varbind)
+		handle(instance, errorVarbind)
 		expect(instance.log).toHaveBeenCalledWith('warn', 'some error')
 	})
 })

@@ -1,6 +1,6 @@
 import { InstanceStatus } from '@companion-module/base'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { StatusManager, type Status } from './status.js'
+import { StatusManager, type Status } from '../status.js'
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -1,6 +1,6 @@
 import snmp from 'net-snmp'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import UpdateFeedbacks, { FeedbackId } from './feedbacks.js'
+import UpdateFeedbacks, { FeedbackId } from '../feedbacks.js'
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -8,7 +8,7 @@ import UpdateFeedbacks, { FeedbackId } from './feedbacks.js'
 
 vi.mock('@companion-module/base', () => ({}))
 
-vi.mock('./options.js', () => ({
+vi.mock('../options.js', () => ({
 	OidDropdownOptions: { type: 'textinput', id: 'oid', label: 'OID' },
 	DivisorOption: { type: 'number', id: 'div', label: 'Divisor', default: 1 },
 	DisplayStringOption: { type: 'checkbox', id: 'displaystring', label: 'Display String', default: false },
@@ -102,19 +102,19 @@ describe(`${FeedbackId.GetOID} callback`, () => {
 	})
 
 	it('calls oidTracker.updateFeedback with the correct arguments', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 5 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 5 })
 		await runCallback(self)
 		expect(self.oidTracker.updateFeedback).toHaveBeenCalledWith(FEEDBACK_ID, VALID_OID, false)
 	})
 
 	it('passes the update flag through to updateFeedback', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 5 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 5 })
 		await runCallback(self, makeOptions({ update: true }))
 		expect(self.oidTracker.updateFeedback).toHaveBeenCalledWith(FEEDBACK_ID, VALID_OID, true)
 	})
 
 	it('returns the varbind value when already cached', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 42 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 42 })
 		const result = await runCallback(self)
 		expect(result).toBe(42)
 	})
@@ -122,7 +122,7 @@ describe(`${FeedbackId.GetOID} callback`, () => {
 	it('calls getOid and logs when OID is not yet cached', async () => {
 		// getOid won't populate oidValues by itself in the mock, so we simulate it
 		self.getOid = vi.fn().mockImplementation(async () => {
-			self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 7 } as any)
+			self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 7 })
 		})
 		await runCallback(self)
 		expect(self.getOid).toHaveBeenCalledWith(VALID_OID)
@@ -130,19 +130,19 @@ describe(`${FeedbackId.GetOID} callback`, () => {
 	})
 
 	it('does not call getOid when OID is already cached', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 })
 		await runCallback(self)
 		expect(self.getOid).not.toHaveBeenCalled()
 	})
 
 	it('applies the divisor when returning a numeric value', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 100 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 100 })
 		const result = await runCallback(self, makeOptions({ div: 4 }))
 		expect(result).toBe(25)
 	})
 
 	it('strips a leading dot from the OID before lookup', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 3 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 3 })
 		await runCallback(self, makeOptions({ oid: `.${VALID_OID}` }))
 		expect(self.oidTracker.updateFeedback).toHaveBeenCalledWith(FEEDBACK_ID, VALID_OID, false)
 	})
@@ -184,7 +184,7 @@ describe(`${FeedbackId.GetOID} learn`, () => {
 	})
 
 	it('always returns undefined', async () => {
-		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 } as any)
+		self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 1 })
 		const result = await runLearn(self)
 		expect(result).toBeUndefined()
 	})

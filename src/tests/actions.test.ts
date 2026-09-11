@@ -1,6 +1,6 @@
 import snmp from 'net-snmp'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import UpdateActions, { ActionId } from './actions.js'
+import UpdateActions, { ActionId } from '../actions.js'
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -8,7 +8,7 @@ import UpdateActions, { ActionId } from './actions.js'
 
 vi.mock('@companion-module/base', () => ({}))
 
-vi.mock('./options.js', () => ({
+vi.mock('../options.js', () => ({
 	ValueOption: { type: 'textinput', id: 'value', label: 'Value' },
 	DivisorOption: { type: 'number', id: 'div', label: 'Divisor', default: 1 },
 	NumberObjectTypeHints: [],
