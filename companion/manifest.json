@@ -30,11 +30,6 @@
 		}
 	},
 	"manufacturer": "Generic",
-	"products": [
-		"SNMP Requests"
-	],
-	"keywords": [
-		"Protocol",
-		"Generic"
-	]
+	"products": ["SNMP Requests"],
+	"keywords": ["Protocol", "Generic"]
 }
