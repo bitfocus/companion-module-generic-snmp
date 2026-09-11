@@ -51,14 +51,25 @@ function makeOptions(overrides: Partial<{ oid: string; div: number; displaystrin
 	return { oid: VALID_OID, div: 1, displaystring: false, update: false, ...overrides }
 }
 
-async function runCallback(self: Self, options = makeOptions(), id = FEEDBACK_ID) {
-	const feedback = getFeedback(self)
-	return feedback.callback({ id, options } as any, {} as any)
+/**
+ * Stand in for the feedback context. The live one always supplies a signal, which
+ * aborts when the result is no longer needed, and the callbacks forward it to getOid.
+ */
+function makeContext(overrides = {}) {
+	return {
+		signal: new AbortController().signal,
+		...overrides,
+	}
 }
 
-async function runLearn(self: Self, options = makeOptions(), id = FEEDBACK_ID) {
+async function runCallback(self: Self, options = makeOptions(), id = FEEDBACK_ID, context = makeContext()) {
 	const feedback = getFeedback(self)
-	return feedback.learn?.({ id, options } as any, {} as any)
+	return feedback.callback({ id, options } as any, context as any)
+}
+
+async function runLearn(self: Self, options = makeOptions(), id = FEEDBACK_ID, context = makeContext()) {
+	const feedback = getFeedback(self)
+	return feedback.learn?.({ id, options } as any, context as any)
 }
 
 function runUnsubscribe(self: Self, options = makeOptions(), id = FEEDBACK_ID) {
@@ -125,7 +136,7 @@ describe(`${FeedbackId.GetOID} callback`, () => {
 			self.oidValues.set(VALID_OID, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 7 })
 		})
 		await runCallback(self)
-		expect(self.getOid).toHaveBeenCalledWith(VALID_OID)
+		expect(self.getOid).toHaveBeenCalledWith([VALID_OID], expect.any(AbortSignal))
 		expect(self.log).toHaveBeenCalledWith('info', expect.stringContaining(VALID_OID))
 	})
 
@@ -180,7 +191,7 @@ describe(`${FeedbackId.GetOID} learn`, () => {
 
 	it('calls getOid', async () => {
 		await runLearn(self)
-		expect(self.getOid).toHaveBeenCalledWith(VALID_OID)
+		expect(self.getOid).toHaveBeenCalledWith([VALID_OID], expect.any(AbortSignal))
 	})
 
 	it('always returns undefined', async () => {

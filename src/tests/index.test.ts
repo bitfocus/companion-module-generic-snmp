@@ -271,7 +271,7 @@ describe('getOid', () => {
 		session.get.mockImplementation((_oids: string[], cb: (err: Error | null, varbinds: snmp.Varbind[]) => void) =>
 			cb(null, []),
 		)
-		await instance.getOid('1.3.6.1.1')
+		await instance.getOid(['1.3.6.1.1'])
 		expect(session.get).toHaveBeenCalledWith(['1.3.6.1.1'], expect.any(Function))
 	})
 
@@ -279,7 +279,7 @@ describe('getOid', () => {
 		session.get.mockImplementation((_oids: string[], cb: (err: Error | null, varbinds: snmp.Varbind[]) => void) =>
 			cb(null, []),
 		)
-		await instance.getOid(...['1.3.6.1.1', '1.3.6.1.2'])
+		await instance.getOid(['1.3.6.1.1', '1.3.6.1.2'])
 		expect(session.get).toHaveBeenCalledWith(['1.3.6.1.1', '1.3.6.1.2'], expect.any(Function))
 	})
 
@@ -287,13 +287,13 @@ describe('getOid', () => {
 		session.get.mockImplementation((_oids: string[], cb: (err: Error | null, varbinds: snmp.Varbind[]) => void) =>
 			cb(null, []),
 		)
-		await instance.getOid(...['1.3.6.1.1', 'bad-oid'])
+		await instance.getOid(['1.3.6.1.1', 'bad-oid'])
 		expect(session.get).toHaveBeenCalledWith(['1.3.6.1.1'], expect.any(Function))
 		expect(instance.log).toHaveBeenCalledWith('warn', expect.stringContaining('bad-oid'))
 	})
 
 	it('returns early without calling session.get when all OIDs are invalid', async () => {
-		await instance.getOid('not-valid')
+		await instance.getOid(['not-valid'])
 		expect(session.get).not.toHaveBeenCalled()
 	})
 
@@ -302,13 +302,13 @@ describe('getOid', () => {
 		session.get.mockImplementation((_oids: string[], cb: (err: Error | null, varbinds: snmp.Varbind[]) => void) =>
 			cb(null, [varbind]),
 		)
-		await instance.getOid('1.3.6.1.1')
+		await instance.getOid(['1.3.6.1.1'])
 		expect(instance.oidValues.has('1.3.6.1.1')).toBe(true)
 	})
 
 	it('rejects when the session is null', async () => {
 		;(instance as any).session = null
-		await expect(instance.getOid('1.3.6.1.1')).rejects.toThrow(/session not initialized/)
+		await expect(instance.getOid(['1.3.6.1.1'])).rejects.toThrow(/session not initialized/)
 	})
 })
 
@@ -669,5 +669,69 @@ describe('resetConnectionState', () => {
 		dirty(instance)
 		await instance.destroy()
 		expect(instance.oidValues.size).toBe(0)
+	})
+})
+
+// ---------------------------------------------------------------------------
+// AbortSignal
+// ---------------------------------------------------------------------------
+
+describe('abort signal', () => {
+	let instance: Generic_SNMP
+	let session: ReturnType<typeof makeMockSession>
+	let aborted: AbortSignal
+
+	beforeEach(() => {
+		instance = makeInstance()
+		;(instance as any).config = { ...BASE_CONFIG }
+		session = makeMockSession()
+		;(instance as any).session = session
+		const controller = new AbortController()
+		controller.abort()
+		aborted = controller.signal
+	})
+
+	// p-queue rejects an aborted entry with a DOMException named AbortError and never
+	// runs the task, so the SNMP session is never touched
+	it('getOid rejects and never reaches the session', async () => {
+		await expect(instance.getOid(['1.3.6.1.2.1.1.5.0'], aborted)).rejects.toThrow(/aborted/i)
+		expect(session.get).not.toHaveBeenCalled()
+	})
+
+	it('setOid rejects and never reaches the session', async () => {
+		await expect(instance.setOid('1.3.6.1.2.1.1.5.0', snmp.ObjectType.Integer, 1, aborted)).rejects.toThrow(/aborted/i)
+		expect(session.set).not.toHaveBeenCalled()
+	})
+
+	it('walk rejects and never reaches the session', async () => {
+		await expect(instance.walk('1.3.6.1.2.1.1', aborted)).rejects.toThrow(/aborted/i)
+		expect(session.walk).not.toHaveBeenCalled()
+	})
+
+	it('sendTrap rejects and never reaches the session', async () => {
+		await expect(instance.sendTrap(snmp.TrapType.ColdStart, [], aborted)).rejects.toThrow(/aborted/i)
+		expect(session.trap).not.toHaveBeenCalled()
+	})
+
+	it('sendInform rejects and never reaches the session', async () => {
+		await expect(instance.sendInform(snmp.TrapType.ColdStart, [], aborted)).rejects.toThrow(/aborted/i)
+		expect(session.inform).not.toHaveBeenCalled()
+	})
+
+	it('rejects with an AbortError rather than an SNMP error', async () => {
+		await expect(instance.getOid(['1.3.6.1.2.1.1.5.0'], aborted)).rejects.toMatchObject({ name: 'AbortError' })
+	})
+
+	// Without a signal the queue entry must still run, the parameter is optional
+	it('runs normally when no signal is passed', async () => {
+		session.get.mockImplementation((_oids: string[], cb: (e: Error | null, v: snmp.Varbind[]) => void) => cb(null, []))
+		await instance.getOid(['1.3.6.1.2.1.1.5.0'])
+		expect(session.get).toHaveBeenCalledWith(['1.3.6.1.2.1.1.5.0'], expect.any(Function))
+	})
+
+	// getOid filters invalid OIDs before queueing, so an all invalid call returns early
+	it('getOid returns without queueing when every OID is invalid', async () => {
+		await expect(instance.getOid(['not-an-oid'], aborted)).resolves.toBeUndefined()
+		expect(session.get).not.toHaveBeenCalled()
 	})
 })

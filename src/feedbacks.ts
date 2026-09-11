@@ -35,24 +35,26 @@ export default function (self: Generic_SNMP): CompanionFeedbackDefinitions<Feedb
 			{ ...EncodingOption, description: `String encoding method used for OctetString, & Opaque object types` },
 			{ ...UpdateOption, default: true },
 		],
-		callback: async (feedback, _context) => {
+		callback: async (feedback, context) => {
+			const signal = context.signal
 			const oid = trimOid(feedback.options.oid)
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to Feedback: ${feedback.id}`)
 			self.oidTracker.updateFeedback(feedback.id, oid, feedback.options.update)
 			if (!self.oidValues.has(oid)) {
 				self.log('info', `Feedback OID not cached yet for ${feedback.id}, retrieving: ${oid}`)
-				await self.getOid(oid)
+				await self.getOid([oid], signal)
 			}
 			const varbind = self.oidValues.get(oid)
 			if (varbind == undefined || varbind.value === undefined)
 				throw new Error(`Varbind not found or has no value, can't update local variable feedback ${feedback.id}`)
 			return prepareVarbindForVariableAssignment(varbind, feedback.options.div, feedback.options.encoding)
 		},
-		learn: async (feedback, _context) => {
+		learn: async (feedback, context) => {
+			const signal = context.signal
 			const oid = trimOid(feedback.options.oid)
 			if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID supplied to Feedback: ${feedback.id}`)
 			self.oidTracker.updateFeedback(feedback.id, oid, feedback.options.update)
-			await self.getOid(oid)
+			await self.getOid([oid], signal)
 			return undefined
 		},
 		unsubscribe: (feedback) => {

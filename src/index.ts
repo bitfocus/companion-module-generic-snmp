@@ -424,7 +424,12 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 * @throws If the OID is invalid or the SNMP set operation fails
 	 */
 
-	public async setOid(oid: string, type: snmp.ObjectType, value: snmp.VarbindValue): Promise<void> {
+	public async setOid(
+		oid: string,
+		type: snmp.ObjectType,
+		value: snmp.VarbindValue,
+		signal?: AbortSignal,
+	): Promise<void> {
 		oid = trimOid(oid)
 		if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID: ${oid}`)
 		await this.snmpQueue.add(
@@ -439,18 +444,19 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 					})
 				})
 			},
-			{ priority: 1 },
+			{ priority: 1, signal },
 		)
 	}
 
 	/**
 	 * Get an SNMP OID value from the target device
 	 *
-	 * @param oids - The SNMP OID or array of OIDs to get
+	 * @param oids - The SNMP OIDs to get
+	 * @param signal - Optional AbortSignal to drop the request from the queue
 	 * @throws If the OID is invalid or the SNMP get operation fails
 	 */
 
-	public async getOid(...oids: string[]): Promise<void> {
+	public async getOid(oids: string[], signal?: AbortSignal): Promise<void> {
 		oids = oids.reduce((acc: string[], oid) => {
 			oid = trimOid(oid)
 			if (!isValidSnmpOid(oid)) {
@@ -478,7 +484,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 					})
 				})
 			},
-			{ priority: 0 },
+			{ priority: 0, signal },
 		)
 	}
 
@@ -489,7 +495,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 * @throws {Error} If the OID is invalid or the SNMP walk operation fails
 	 */
 
-	public async walk(oid: string): Promise<void> {
+	public async walk(oid: string, signal?: AbortSignal): Promise<void> {
 		oid = trimOid(oid)
 		if (!isValidSnmpOid(oid)) throw new Error(`Invalid OID: ${oid}, walk cancelled`)
 		return await this.snmpQueue.add(
@@ -507,7 +513,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 					this.session.walk(oid, feedCb, doneCb)
 				})
 			},
-			{ priority: 0 },
+			{ priority: 0, signal },
 		)
 	}
 
@@ -521,7 +527,11 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 * @returns Resolves when the inform is acknowledged, or rejects on error.
 	 */
 
-	public async sendInform(typeOrOid: snmp.TrapType | string, ...varbinds: snmp.Varbind[]): Promise<void> {
+	public async sendInform(
+		typeOrOid: snmp.TrapType | string,
+		varbinds: snmp.Varbind[] = [],
+		signal?: AbortSignal,
+	): Promise<void> {
 		return await this.snmpQueue.add(
 			async () => {
 				return new Promise<void>((resolve, reject) => {
@@ -543,7 +553,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 					})
 				})
 			},
-			{ priority: 2 },
+			{ priority: 2, signal },
 		)
 	}
 	/**
@@ -555,7 +565,11 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	 *   to include with the trap. Only used when `typeOrOid` is an OID string.
 	 * @returns Resolves when the trap is sent, or rejects on error.
 	 */
-	public async sendTrap(typeOrOid: snmp.TrapType | string, ...varbinds: snmp.Varbind[]): Promise<void> {
+	public async sendTrap(
+		typeOrOid: snmp.TrapType | string,
+		varbinds: snmp.Varbind[] = [],
+		signal?: AbortSignal,
+	): Promise<void> {
 		return await this.snmpQueue.add(
 			async () => {
 				return new Promise<void>((resolve, reject) => {
@@ -578,7 +592,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 					})
 				})
 			},
-			{ priority: 3 },
+			{ priority: 3, signal },
 		)
 	}
 
@@ -620,7 +634,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		const oids = this.getOidsToPoll()
 		if (oids.length > 0) {
 			try {
-				await this.getOid(...oids)
+				await this.getOid(oids)
 			} catch (err) {
 				this.log('warn', `Poll failed: ${err instanceof Error ? err.message : String(err)}`)
 			}

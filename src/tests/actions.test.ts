@@ -54,6 +54,9 @@ function makeBaseSelf() {
 function makeContext(overrides = {}) {
 	return {
 		setCustomVariableValue: vi.fn(),
+		// CompanionActionCallbackContext always supplies one, it aborts when the
+		// result of the execution is no longer needed
+		signal: new AbortController().signal,
 		...overrides,
 	}
 }
@@ -130,14 +133,22 @@ describe(`${ActionId.SetString} callback`, () => {
 		self = makeSelf()
 	})
 
-	it('calls setOid with OctetString type', async () => {
-		await runCallback(self, ActionId.SetString, { oid: VALID_OID, value: 'hello', encoding: 'utf8' })
-		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.OctetString, Buffer.from('hello', 'utf8'))
+	// The other setOid tests accept any signal, this one pins that the signal forwarded
+	// is the context's own rather than some freshly made one
+	it('calls setOid with OctetString type, forwarding the context signal', async () => {
+		const context = makeContext()
+		await runCallback(self, ActionId.SetString, { oid: VALID_OID, value: 'hello', encoding: 'utf8' }, context)
+		expect(self.setOid).toHaveBeenCalledWith(
+			VALID_OID,
+			snmp.ObjectType.OctetString,
+			Buffer.from('hello', 'utf8'),
+			context.signal,
+		)
 	})
 
 	it('strips leading dot from OID', async () => {
 		await runCallback(self, ActionId.SetString, { oid: `.${VALID_OID}`, value: 'x' })
-		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, expect.anything(), expect.anything())
+		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, expect.anything(), expect.anything(), expect.any(AbortSignal))
 	})
 
 	it('throws on invalid OID', async () => {
@@ -185,7 +196,12 @@ describe(`${ActionId.SetOpaque} callback`, () => {
 
 	it('calls setOid with Opaque type', async () => {
 		await runCallback(self, ActionId.SetOpaque, { oid: VALID_OID, value: 'SGVsbG8=', encoding: 'base64' })
-		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.Opaque, Buffer.from('SGVsbG8=', 'base64'))
+		expect(self.setOid).toHaveBeenCalledWith(
+			VALID_OID,
+			snmp.ObjectType.Opaque,
+			Buffer.from('SGVsbG8=', 'base64'),
+			expect.any(AbortSignal),
+		)
 	})
 
 	it('throws on invalid OID', async () => {
@@ -205,12 +221,12 @@ describe(`${ActionId.SetNumber} callback`, () => {
 
 	it('calls setOid with the specified numeric type and rounded value', async () => {
 		await runCallback(self, ActionId.SetNumber, { oid: VALID_OID, type: snmp.ObjectType.Integer, value: 3.7 })
-		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.Integer, 4)
+		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.Integer, 4, expect.any(AbortSignal))
 	})
 
 	it('rounds fractional values', async () => {
 		await runCallback(self, ActionId.SetNumber, { oid: VALID_OID, type: snmp.ObjectType.Gauge, value: 1.2 })
-		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.Gauge, 1)
+		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.Gauge, 1, expect.any(AbortSignal))
 	})
 
 	it('throws on invalid OID', async () => {
@@ -254,22 +270,22 @@ describe(`${ActionId.SetBoolean} callback`, () => {
 
 	it.each([['true'], ['on'], ['1'], ['yes']])('treats "%s" as true', async (val) => {
 		await runCallback(self, ActionId.SetBoolean, { oid: VALID_OID, value: val })
-		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.Boolean, true)
+		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.Boolean, true, expect.any(AbortSignal))
 	})
 
 	it.each([['false'], ['off'], ['0'], ['no']])('treats "%s" as false', async (val) => {
 		await runCallback(self, ActionId.SetBoolean, { oid: VALID_OID, value: val })
-		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.Boolean, false)
+		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.Boolean, false, expect.any(AbortSignal))
 	})
 
 	it('passes through a native boolean true', async () => {
 		await runCallback(self, ActionId.SetBoolean, { oid: VALID_OID, value: true })
-		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.Boolean, true)
+		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.Boolean, true, expect.any(AbortSignal))
 	})
 
 	it('passes through a native boolean false', async () => {
 		await runCallback(self, ActionId.SetBoolean, { oid: VALID_OID, value: false })
-		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.Boolean, false)
+		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.Boolean, false, expect.any(AbortSignal))
 	})
 
 	it('throws on an unrecognised string value', async () => {
@@ -316,7 +332,7 @@ describe(`${ActionId.SetIpAddress} callback`, () => {
 
 	it('calls setOid with IpAddress type', async () => {
 		await runCallback(self, ActionId.SetIpAddress, { oid: VALID_OID, value: '10.0.0.1' })
-		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.IpAddress, '10.0.0.1')
+		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.IpAddress, '10.0.0.1', expect.any(AbortSignal))
 	})
 
 	it('throws on invalid OID', async () => {
@@ -357,7 +373,7 @@ describe(`${ActionId.SetOID} callback`, () => {
 
 	it('calls setOid with OID type', async () => {
 		await runCallback(self, ActionId.SetOID, { oid: VALID_OID, value: '1.3.6.1.9' })
-		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.OID, '1.3.6.1.9')
+		expect(self.setOid).toHaveBeenCalledWith(VALID_OID, snmp.ObjectType.OID, '1.3.6.1.9', expect.any(AbortSignal))
 	})
 
 	it('throws on invalid OID', async () => {
@@ -504,7 +520,7 @@ describe(`${ActionId.GetOID} subscribe`, () => {
 	// primes the cache, and must leave the poll group alone.
 	it('fetches the OID without touching the poll group', async () => {
 		await runSubscribe(self, ActionId.GetOID, { oid: VALID_OID })
-		expect(self.getOid).toHaveBeenCalledWith(VALID_OID)
+		expect(self.getOid).toHaveBeenCalledWith([VALID_OID])
 		expect(self.oidTracker.addToPollGroup).not.toHaveBeenCalled()
 		expect(self.oidTracker.removeFromPollGroup).not.toHaveBeenCalled()
 	})
@@ -524,14 +540,15 @@ describe(`${ActionId.WalkOID} callback`, () => {
 		self = makeSelf()
 	})
 
-	it('calls walk with the correct OID', async () => {
-		await runCallback(self, ActionId.WalkOID, { oid: VALID_OID })
-		expect(self.walk).toHaveBeenCalledWith(VALID_OID)
+	it('calls walk with the correct OID, forwarding the context signal', async () => {
+		const context = makeContext()
+		await runCallback(self, ActionId.WalkOID, { oid: VALID_OID }, context)
+		expect(self.walk).toHaveBeenCalledWith(VALID_OID, context.signal)
 	})
 
 	it('strips leading dots', async () => {
 		await runCallback(self, ActionId.WalkOID, { oid: `.${VALID_OID}` })
-		expect(self.walk).toHaveBeenCalledWith(VALID_OID)
+		expect(self.walk).toHaveBeenCalledWith(VALID_OID, expect.any(AbortSignal))
 	})
 
 	it('throws on invalid OID', async () => {
@@ -550,30 +567,42 @@ describe(`${ActionId.TrapOrInform} callback — generic trap types`, () => {
 	})
 
 	it('calls sendTrap with the trap type when messageType is "trap"', async () => {
-		await runCallback(self, ActionId.TrapOrInform, {
-			messageType: 'trap',
-			trapType: snmp.TrapType.ColdStart,
-			oidEnterprise: VALID_OID,
-			oidVarbind: VALID_OID,
-			objectType: snmp.ObjectType.Integer,
-			objectValue: '1',
-			encoding: 'base64',
-		})
-		expect(self.sendTrap).toHaveBeenCalledWith(snmp.TrapType.ColdStart)
+		const context = makeContext()
+		await runCallback(
+			self,
+			ActionId.TrapOrInform,
+			{
+				messageType: 'trap',
+				trapType: snmp.TrapType.ColdStart,
+				oidEnterprise: VALID_OID,
+				oidVarbind: VALID_OID,
+				objectType: snmp.ObjectType.Integer,
+				objectValue: '1',
+				encoding: 'base64',
+			},
+			context,
+		)
+		expect(self.sendTrap).toHaveBeenCalledWith(snmp.TrapType.ColdStart, [], context.signal)
 		expect(self.sendInform).not.toHaveBeenCalled()
 	})
 
 	it('calls sendInform with the trap type when messageType is "inform"', async () => {
-		await runCallback(self, ActionId.TrapOrInform, {
-			messageType: 'inform',
-			trapType: snmp.TrapType.LinkUp,
-			oidEnterprise: VALID_OID,
-			oidVarbind: VALID_OID,
-			objectType: snmp.ObjectType.Integer,
-			objectValue: '1',
-			encoding: 'base64',
-		})
-		expect(self.sendInform).toHaveBeenCalledWith(snmp.TrapType.LinkUp)
+		const context = makeContext()
+		await runCallback(
+			self,
+			ActionId.TrapOrInform,
+			{
+				messageType: 'inform',
+				trapType: snmp.TrapType.LinkUp,
+				oidEnterprise: VALID_OID,
+				oidVarbind: VALID_OID,
+				objectType: snmp.ObjectType.Integer,
+				objectValue: '1',
+				encoding: 'base64',
+			},
+			context,
+		)
+		expect(self.sendInform).toHaveBeenCalledWith(snmp.TrapType.LinkUp, [], context.signal)
 		expect(self.sendTrap).not.toHaveBeenCalled()
 	})
 })
@@ -601,7 +630,8 @@ describe(`${ActionId.TrapOrInform} callback — enterprise-specific`, () => {
 		await runCallback(self, ActionId.TrapOrInform, { messageType: 'trap', ...enterpriseOptions })
 		expect(self.sendTrap).toHaveBeenCalledWith(
 			'1.3.6.1.4.1.999',
-			expect.objectContaining({ oid: VALID_OID, type: snmp.ObjectType.Integer }),
+			[expect.objectContaining({ oid: VALID_OID, type: snmp.ObjectType.Integer })],
+			expect.any(AbortSignal),
 		)
 	})
 
@@ -609,7 +639,8 @@ describe(`${ActionId.TrapOrInform} callback — enterprise-specific`, () => {
 		await runCallback(self, ActionId.TrapOrInform, { messageType: 'inform', ...enterpriseOptions })
 		expect(self.sendInform).toHaveBeenCalledWith(
 			'1.3.6.1.4.1.999',
-			expect.objectContaining({ oid: VALID_OID, type: snmp.ObjectType.Integer }),
+			[expect.objectContaining({ oid: VALID_OID, type: snmp.ObjectType.Integer })],
+			expect.any(AbortSignal),
 		)
 	})
 
