@@ -408,7 +408,6 @@ describe(`${ActionId.GetOID} callback`, () => {
 				{
 					oid: VALID_OID,
 					variable: 'myVar',
-					update: false,
 					displaystring: false,
 					div: 1,
 				},
@@ -422,7 +421,6 @@ describe(`${ActionId.GetOID} callback`, () => {
 			runCallback(self, ActionId.GetOID, {
 				oid: INVALID_OID,
 				variable: 'myVar',
-				update: false,
 				displaystring: false,
 				div: 1,
 			}),
@@ -444,7 +442,7 @@ describe(`${ActionId.GetOID} callback — return value`, () => {
 		const result = await runCallback(
 			self,
 			ActionId.GetOID,
-			{ oid: VALID_OID, variable: 'myVar', update: false, div: 1, encoding: 'utf8' },
+			{ oid: VALID_OID, variable: 'myVar', div: 1, encoding: 'utf8' },
 			context,
 		)
 		expect(result).toBe(42)
@@ -455,7 +453,7 @@ describe(`${ActionId.GetOID} callback — return value`, () => {
 		const result = await runCallback(
 			self,
 			ActionId.GetOID,
-			{ oid: VALID_OID, variable: 'myVar', update: false, div: 1, encoding: 'utf8' },
+			{ oid: VALID_OID, variable: 'myVar', div: 1, encoding: 'utf8' },
 			context,
 		)
 		expect(result).toBe('hello')
@@ -466,7 +464,7 @@ describe(`${ActionId.GetOID} callback — return value`, () => {
 		const result = await runCallback(
 			self,
 			ActionId.GetOID,
-			{ oid: VALID_OID, variable: 'myVar', update: false, div: 1, encoding: 'utf8' },
+			{ oid: VALID_OID, variable: 'myVar', div: 1, encoding: 'utf8' },
 			context,
 		)
 		expect(result).toBe(true)
@@ -477,7 +475,7 @@ describe(`${ActionId.GetOID} callback — return value`, () => {
 		const result = await runCallback(
 			self,
 			ActionId.GetOID,
-			{ oid: VALID_OID, variable: 'myVar', update: false, div: 4, encoding: 'utf8' },
+			{ oid: VALID_OID, variable: 'myVar', div: 4, encoding: 'utf8' },
 			context,
 		)
 		expect(result).toBe(25)
@@ -488,7 +486,7 @@ describe(`${ActionId.GetOID} callback — return value`, () => {
 		const result = await runCallback(
 			self,
 			ActionId.GetOID,
-			{ oid: VALID_OID, variable: 'myVar', update: false, div: 1, encoding: 'utf8' },
+			{ oid: VALID_OID, variable: 'myVar', div: 1, encoding: 'utf8' },
 			context,
 		)
 		expect(result).toBe('')
@@ -501,20 +499,18 @@ describe(`${ActionId.GetOID} subscribe`, () => {
 		self = makeSelf()
 	})
 
-	it('adds to poll group when update is true', async () => {
-		await runSubscribe(self, ActionId.GetOID, { oid: VALID_OID, update: true })
-		expect(self.oidTracker.addToPollGroup).toHaveBeenCalledWith(VALID_OID, ActionId.GetOID)
-	})
-
-	it('removes from poll group when update is false', async () => {
-		await runSubscribe(self, ActionId.GetOID, { oid: VALID_OID, update: false })
-		expect(self.oidTracker.removeFromPollGroup).toHaveBeenCalledWith(VALID_OID, ActionId.GetOID)
+	// The 'update' option and its poll group handling were removed in 1289e2c
+	// ("remove broken update option from getOID action"). Subscribe now only
+	// primes the cache, and must leave the poll group alone.
+	it('fetches the OID without touching the poll group', async () => {
+		await runSubscribe(self, ActionId.GetOID, { oid: VALID_OID })
+		expect(self.getOid).toHaveBeenCalledWith(VALID_OID)
+		expect(self.oidTracker.addToPollGroup).not.toHaveBeenCalled()
+		expect(self.oidTracker.removeFromPollGroup).not.toHaveBeenCalled()
 	})
 
 	it('throws on invalid OID', async () => {
-		await expect(runSubscribe(self, ActionId.GetOID, { oid: INVALID_OID, update: false })).rejects.toThrow(
-			/Invalid OID/,
-		)
+		await expect(runSubscribe(self, ActionId.GetOID, { oid: INVALID_OID })).rejects.toThrow(/Invalid OID/)
 	})
 })
 
