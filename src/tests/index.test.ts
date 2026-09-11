@@ -735,3 +735,95 @@ describe('abort signal', () => {
 		expect(session.get).not.toHaveBeenCalled()
 	})
 })
+
+// ---------------------------------------------------------------------------
+// connection variable values
+// ---------------------------------------------------------------------------
+
+describe('connection variable values', () => {
+	let instance: Generic_SNMP
+	const handle = (inst: Generic_SNMP, varbind: snmp.Varbind, index = 0) => (inst as any).handleVarbind(varbind, index)
+	const sysName = (value: string) => makeVarbind('1.3.6.1.2.1.1.5.0', snmp.ObjectType.OctetString, Buffer.from(value))
+
+	beforeEach(() => {
+		vi.useFakeTimers()
+		instance = makeInstance()
+		;(instance as any).config = { ...BASE_CONFIG, variables: true, interval: 0 }
+		;(instance as any).secrets = BASE_SECRETS
+	})
+
+	afterEach(() => {
+		;(instance as any).throttledFeedbackIdCheck.cancel()
+		;(instance as any).throttledUpdateVariableValues.cancel()
+		;(instance as any).debouncedUpdateDefinitions.cancel()
+		;(instance as any).debouncedUpdateVariableDefinitions.cancel()
+		vi.useRealTimers()
+	})
+
+	it('publishes the value of a newly cached OID', async () => {
+		handle(instance, sysName('debian'))
+		await vi.advanceTimersByTimeAsync(30)
+		expect(instance.setVariableValues).toHaveBeenCalledWith({ '1.3.6.1.2.1.1.5.0': 'debian' })
+	})
+
+	// The gap this closes: a trap carrying a new value for an OID already in the cache
+	// used to leave the variable stale until the next poll
+	it('republishes an OID that was already cached, not just new ones', async () => {
+		handle(instance, sysName('debian'))
+		await vi.advanceTimersByTimeAsync(30)
+		;(instance.setVariableValues as any).mockClear()
+
+		handle(instance, sysName('renamed'))
+		await vi.advanceTimersByTimeAsync(30)
+		expect(instance.setVariableValues).toHaveBeenCalledWith({ '1.3.6.1.2.1.1.5.0': 'renamed' })
+	})
+
+	// interval 0 means polling is off, so the varbind path is the only way a value moves
+	it('updates with polling turned off', async () => {
+		expect((instance as any).config.interval).toBe(0)
+		handle(instance, sysName('debian'))
+		await vi.advanceTimersByTimeAsync(30)
+		expect(instance.setVariableValues).toHaveBeenCalledWith({ '1.3.6.1.2.1.1.5.0': 'debian' })
+	})
+
+	it('publishes only the OIDs that changed, not the whole cache', async () => {
+		instance.oidValues.set('1.3.6.1.2.1.1.1.0', makeVarbind('1.3.6.1.2.1.1.1.0', snmp.ObjectType.Integer, 1))
+		instance.oidValues.set('1.3.6.1.2.1.1.3.0', makeVarbind('1.3.6.1.2.1.1.3.0', snmp.ObjectType.TimeTicks, 1))
+
+		handle(instance, sysName('debian'))
+		await vi.advanceTimersByTimeAsync(30)
+		expect(instance.setVariableValues).toHaveBeenCalledWith({ '1.3.6.1.2.1.1.5.0': 'debian' })
+	})
+
+	it('coalesces a burst of varbinds into one publish', async () => {
+		handle(instance, makeVarbind('1.3.6.1.2.1.1.1.0', snmp.ObjectType.Integer, 1))
+		handle(instance, makeVarbind('1.3.6.1.2.1.1.3.0', snmp.ObjectType.TimeTicks, 34172))
+		handle(instance, sysName('debian'))
+		await vi.advanceTimersByTimeAsync(30)
+
+		expect(instance.setVariableValues).toHaveBeenCalledTimes(1)
+		expect(instance.setVariableValues).toHaveBeenCalledWith({
+			'1.3.6.1.2.1.1.1.0': 1,
+			'1.3.6.1.2.1.1.3.0': 34172,
+			'1.3.6.1.2.1.1.5.0': 'debian',
+		})
+	})
+
+	it('publishes nothing when the option is off', async () => {
+		;(instance as any).config.variables = false
+		handle(instance, sysName('debian'))
+		await vi.advanceTimersByTimeAsync(30)
+		expect(instance.setVariableValues).not.toHaveBeenCalled()
+	})
+
+	// A pending publish that fired after a reset would write values for a cache that
+	// has since been cleared
+	it('drops a pending publish on reset', async () => {
+		handle(instance, sysName('debian'))
+		;(instance as any).resetConnectionState()
+		;(instance.setVariableValues as any).mockClear()
+
+		await vi.advanceTimersByTimeAsync(30)
+		expect(instance.setVariableValues).not.toHaveBeenCalled()
+	})
+})

@@ -34,6 +34,8 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	public oidValues: Map<string, snmp.Varbind> = new Map()
 	/** Set of Feedback IDs to be checked after throttle interval */
 	private feedbackIdsToCheck: Set<string> = new Set()
+	/** Set of OIDs whose connection variable needs republishing after throttle interval */
+	private variableOidsToUpdate: Set<string> = new Set()
 	public oidTracker = new FeedbackOidTracker()
 	private snmpQueue = new PQueue({ concurrency: 1, interval: 10, intervalCap: 1 })
 	private agentAddress = '127.0.0.1'
@@ -102,6 +104,8 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		this.debouncedUpdateDefinitions.cancel()
 		this.debouncedUpdateVariableDefinitions.cancel()
 		this.throttledFeedbackIdCheck.cancel()
+		this.throttledUpdateVariableValues.cancel()
+		this.variableOidsToUpdate.clear()
 		if (this.pollTimer) {
 			clearTimeout(this.pollTimer)
 			delete this.pollTimer
@@ -410,6 +414,10 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 				this.debouncedUpdateDefinitions()
 				if (this.config.variables) this.debouncedUpdateVariableDefinitions()
 			}
+			if (this.config.variables) {
+				this.variableOidsToUpdate.add(varbind.oid)
+				this.throttledUpdateVariableValues()
+			}
 			this.oidTracker.getFeedbackIdsForOid(varbind.oid).forEach((id) => this.feedbackIdsToCheck.add(id))
 			if (this.feedbackIdsToCheck.size > 0) this.throttledFeedbackIdCheck()
 		}
@@ -642,7 +650,6 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 
 		// Abort if configUpdated() or destory() fired while awaiting getOid
 		if (generation !== this.pollGeneration) return
-		if (this.config.variables) this.updateVariableValues()
 		if (this.config.interval > 0) {
 			this.pollTimer = setTimeout(() => {
 				this.pollOids().catch(() => {})
@@ -684,6 +691,24 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	private updateVariableValues(): void {
 		this.setVariableValues(GetVariableValues(this))
 	}
+
+	/**
+	 * Republishes the connection variables for the OIDs cached since the last run.
+	 *
+	 * Every varbind reaching the cache queues its own OID, whether it arrived from a
+	 * poll, a trap, an inform or a get, so a value that changes between polls is not
+	 * left stale. The throttle only coalesces the burst a walk or a multi OID get
+	 * produces; it is deliberately short, matching throttledFeedbackIdCheck, because
+	 * the payload is a handful of OIDs rather than the whole cache.
+	 */
+	private throttledUpdateVariableValues = throttle(
+		() => {
+			this.setVariableValues(GetVariableValues(this, this.variableOidsToUpdate))
+			this.variableOidsToUpdate.clear()
+		},
+		30,
+		{ edges: ['trailing'] },
+	)
 
 	/**
 	 * Debounced function that updates the connection variable definitions.

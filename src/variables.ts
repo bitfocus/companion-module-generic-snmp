@@ -33,14 +33,23 @@ export function GetVariableDefinitions(self: Generic_SNMP): CompanionVariableDef
 }
 
 /**
- * Builds the current value of every cached OID, keyed by OID in dotted decimal form.
+ * Builds the current value of cached OIDs, keyed by OID in dotted decimal form.
+ *
+ * Pass `oids` to publish just those, which is what the per varbind path does: a trap
+ * or a get touches one OID, and republishing the whole cache for it would be wasted
+ * work that grows with every OID ever walked. Omit it to publish the lot.
+ *
+ * OIDs that are not cached are skipped, so an OID that returned NoSuchObject, or one
+ * dropped by a reset, does not publish an empty value over a good one.
  *
  * Returns an empty set when the feature is switched off.
  */
-export function GetVariableValues(self: Generic_SNMP): CompanionVariableValues {
+export function GetVariableValues(self: Generic_SNMP, oids?: Iterable<string>): CompanionVariableValues {
 	if (!self.config.variables) return {}
 	const values: CompanionVariableValues = {}
-	for (const [oid, varbind] of self.oidValues) {
+	for (const oid of oids ?? self.oidValues.keys()) {
+		const varbind = self.oidValues.get(oid)
+		if (varbind === undefined) continue
 		values[oid] = prepareVarbindForVariableAssignment(varbind, VariableDivisor, VariableEncoding) ?? ''
 	}
 	return values
