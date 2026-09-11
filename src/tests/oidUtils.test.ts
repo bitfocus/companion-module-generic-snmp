@@ -293,6 +293,25 @@ describe('validateVarbinds', () => {
 		expect(result[3].value).toStrictEqual(Buffer.from('A thing devised by the enemy', 'base64'))
 	})
 
+	// The wrapper flattens the original message into its own, so without a cause the
+	// stack of the varbind that actually failed is lost
+	it('attaches the original error as the cause', () => {
+		const varbinds = [
+			{ oid: '1.3.6.1', type: snmp.ObjectType.Integer, value: '5' },
+			{ oid: 'not-an-oid', type: snmp.ObjectType.Integer, value: '5' },
+		] as snmp.Varbind[]
+
+		let thrown: unknown
+		try {
+			validateVarbinds(varbinds)
+		} catch (error) {
+			thrown = error
+		}
+		expect(thrown).toBeInstanceOf(Error)
+		expect((thrown as Error).cause).toBeInstanceOf(Error)
+		expect((thrown as Error).cause).not.toBe(thrown)
+	})
+
 	it('wraps errors with the varbind index', () => {
 		const varbinds = [
 			{ oid: '1.3.6.1', type: snmp.ObjectType.Integer, value: '5' },
