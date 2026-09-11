@@ -15,6 +15,8 @@ vi.mock('@companion-module/base', () => {
 		checkFeedbacksById = vi.fn()
 		setActionDefinitions = vi.fn()
 		setFeedbackDefinitions = vi.fn()
+		setVariableDefinitions = vi.fn()
+		setVariableValues = vi.fn()
 		createSharedUdpSocket = vi.fn()
 		constructor(_internal: unknown) {}
 	}
@@ -56,6 +58,7 @@ const BASE_CONFIG = {
 	traps: false,
 	walk: '',
 	interval: 0,
+	variables: false,
 	verbose: false,
 }
 
@@ -259,6 +262,7 @@ describe('getOid', () => {
 
 	beforeEach(() => {
 		instance = makeInstance()
+		;(instance as any).config = BASE_CONFIG
 		session = makeMockSession()
 		;(instance as any).session = session
 	})
@@ -318,6 +322,7 @@ describe('walk', () => {
 
 	beforeEach(() => {
 		instance = makeInstance()
+		;(instance as any).config = BASE_CONFIG
 		session = makeMockSession()
 		;(instance as any).session = session
 	})
@@ -454,5 +459,215 @@ describe('sendTrap', () => {
 				cb(new Error('trap failed')),
 		)
 		await expect(instance.sendTrap(snmp.TrapType.ColdStart)).rejects.toThrow('trap failed')
+	})
+})
+
+// ---------------------------------------------------------------------------
+// getOidsToPoll
+// ---------------------------------------------------------------------------
+
+describe('getOidsToPoll', () => {
+	let instance: Generic_SNMP
+	const oidsToPoll = (inst: Generic_SNMP): string[] => (inst as any).getOidsToPoll()
+
+	beforeEach(() => {
+		instance = makeInstance()
+		;(instance as any).config = { ...BASE_CONFIG }
+	})
+
+	it('polls only the feedback watched OIDs when connection variables are off', () => {
+		instance.oidValues.set('1.3.6.1.2.1.1.5.0', makeVarbind('1.3.6.1.2.1.1.5.0', snmp.ObjectType.Integer, 1))
+		instance.oidTracker.addToPollGroup('1.3.6.1.2.1.1.3.0', 'feedback-1')
+		expect(oidsToPoll(instance)).toStrictEqual(['1.3.6.1.2.1.1.3.0'])
+	})
+
+	it('polls every cached OID when connection variables are on', () => {
+		;(instance as any).config.variables = true
+		instance.oidValues.set('1.3.6.1.2.1.1.5.0', makeVarbind('1.3.6.1.2.1.1.5.0', snmp.ObjectType.Integer, 1))
+		instance.oidValues.set('1.3.6.1.2.1.1.7.0', makeVarbind('1.3.6.1.2.1.1.7.0', snmp.ObjectType.Integer, 72))
+		expect(oidsToPoll(instance).sort()).toStrictEqual(['1.3.6.1.2.1.1.5.0', '1.3.6.1.2.1.1.7.0'])
+	})
+
+	// A feedback can watch an OID that is not in oidValues: handleVarbind refuses to
+	// cache NoSuchObject, NoSuchInstance and EndOfMibView, and an unreachable OID has
+	// never been cached at all. Dropping it from the poll would strand the feedback.
+	it('keeps polling a feedback watched OID that has never been cached', () => {
+		;(instance as any).config.variables = true
+		instance.oidValues.set('1.3.6.1.2.1.1.5.0', makeVarbind('1.3.6.1.2.1.1.5.0', snmp.ObjectType.Integer, 1))
+		instance.oidTracker.addToPollGroup('1.3.6.1.2.1.1.3.0', 'feedback-1')
+		expect(oidsToPoll(instance).sort()).toStrictEqual(['1.3.6.1.2.1.1.3.0', '1.3.6.1.2.1.1.5.0'])
+	})
+
+	it('does not request an OID twice when it is both cached and feedback watched', () => {
+		;(instance as any).config.variables = true
+		instance.oidValues.set('1.3.6.1.2.1.1.5.0', makeVarbind('1.3.6.1.2.1.1.5.0', snmp.ObjectType.Integer, 1))
+		instance.oidTracker.addToPollGroup('1.3.6.1.2.1.1.5.0', 'feedback-1')
+		expect(oidsToPoll(instance)).toStrictEqual(['1.3.6.1.2.1.1.5.0'])
+	})
+})
+
+// ---------------------------------------------------------------------------
+// connection variable definitions
+// ---------------------------------------------------------------------------
+
+describe('connection variable definitions', () => {
+	let instance: Generic_SNMP
+	const handle = (inst: Generic_SNMP, varbind: snmp.Varbind, index = 0) => (inst as any).handleVarbind(varbind, index)
+
+	beforeEach(() => {
+		vi.useFakeTimers()
+		instance = makeInstance()
+		;(instance as any).config = { ...BASE_CONFIG, variables: true }
+		;(instance as any).secrets = BASE_SECRETS
+	})
+
+	afterEach(() => {
+		;(instance as any).throttledFeedbackIdCheck.cancel()
+		;(instance as any).debouncedUpdateDefinitions.cancel()
+		;(instance as any).debouncedUpdateVariableDefinitions.cancel()
+		vi.useRealTimers()
+	})
+
+	it('publishes definitions 500ms after a new OID is cached', async () => {
+		handle(instance, makeVarbind('1.3.6.1.2.1.1.5.0', snmp.ObjectType.OctetString, Buffer.from('debian')))
+		expect(instance.setVariableDefinitions).not.toHaveBeenCalled()
+
+		await vi.advanceTimersByTimeAsync(500)
+		expect(instance.setVariableDefinitions).toHaveBeenCalledWith({
+			'1.3.6.1.2.1.1.5.0': { name: '1.3.6.1.2.1.1.5.0' },
+		})
+	})
+
+	// The whole point of the debounce: a walk feeds varbinds in one at a time
+	it('publishes once for a burst of new OIDs rather than once per varbind', async () => {
+		for (const oid of ['1.3.6.1.2.1.1.1.0', '1.3.6.1.2.1.1.3.0', '1.3.6.1.2.1.1.5.0']) {
+			handle(instance, makeVarbind(oid, snmp.ObjectType.Integer, 1))
+		}
+		await vi.advanceTimersByTimeAsync(500)
+		expect(instance.setVariableDefinitions).toHaveBeenCalledTimes(1)
+		expect(instance.setVariableDefinitions).toHaveBeenCalledWith({
+			'1.3.6.1.2.1.1.1.0': { name: '1.3.6.1.2.1.1.1.0' },
+			'1.3.6.1.2.1.1.3.0': { name: '1.3.6.1.2.1.1.3.0' },
+			'1.3.6.1.2.1.1.5.0': { name: '1.3.6.1.2.1.1.5.0' },
+		})
+	})
+
+	it('does not redefine when a known OID is refreshed with a new value', async () => {
+		handle(instance, makeVarbind('1.3.6.1.2.1.1.3.0', snmp.ObjectType.TimeTicks, 34172))
+		await vi.advanceTimersByTimeAsync(500)
+		;(instance.setVariableDefinitions as any).mockClear()
+
+		handle(instance, makeVarbind('1.3.6.1.2.1.1.3.0', snmp.ObjectType.TimeTicks, 34272))
+		await vi.advanceTimersByTimeAsync(500)
+		expect(instance.setVariableDefinitions).not.toHaveBeenCalled()
+	})
+
+	it('schedules nothing when the option is off', async () => {
+		;(instance as any).config.variables = false
+		handle(instance, makeVarbind('1.3.6.1.2.1.1.5.0', snmp.ObjectType.Integer, 1))
+		await vi.advanceTimersByTimeAsync(500)
+		expect(instance.setVariableDefinitions).not.toHaveBeenCalled()
+	})
+})
+// ---------------------------------------------------------------------------
+// resetConnectionState, via configUpdated and destroy
+// ---------------------------------------------------------------------------
+
+describe('resetConnectionState', () => {
+	let instance: Generic_SNMP
+	let session: ReturnType<typeof makeMockSession>
+
+	beforeEach(() => {
+		vi.useFakeTimers()
+		instance = makeInstance()
+		;(instance as any).config = { ...BASE_CONFIG, variables: true }
+		;(instance as any).secrets = BASE_SECRETS
+		session = makeMockSession()
+		;(instance as any).session = session
+	})
+
+	afterEach(() => {
+		;(instance as any).throttledFeedbackIdCheck.cancel()
+		;(instance as any).debouncedUpdateDefinitions.cancel()
+		;(instance as any).debouncedUpdateVariableDefinitions.cancel()
+		vi.useRealTimers()
+	})
+
+	/** Put the instance into a state where every resource the reset drops is live */
+	const dirty = (inst: Generic_SNMP) => {
+		inst.oidValues.set('1.3.6.1.2.1.1.5.0', makeVarbind('1.3.6.1.2.1.1.5.0', snmp.ObjectType.Integer, 1))
+		;(inst as any).debouncedUpdateDefinitions()
+		;(inst as any).debouncedUpdateVariableDefinitions()
+		;(inst as any).feedbackIdsToCheck.add('feedback-1')
+		;(inst as any).throttledFeedbackIdCheck()
+		;(inst as any).pollTimer = setTimeout(() => {}, 60_000)
+	}
+
+	const reset = (inst: Generic_SNMP) => (inst as any).resetConnectionState()
+
+	it('clears the OID cache', () => {
+		dirty(instance)
+		reset(instance)
+		expect(instance.oidValues.size).toBe(0)
+	})
+
+	it('bumps the poll generation so in flight requests bail out', () => {
+		const before = (instance as any).pollGeneration
+		reset(instance)
+		expect((instance as any).pollGeneration).toBe(before + 1)
+	})
+
+	it('clears the poll timer', () => {
+		dirty(instance)
+		reset(instance)
+		expect((instance as any).pollTimer).toBeUndefined()
+	})
+
+	// A pending debounce firing after the reset would repopulate definitions from a
+	// cache that belongs to the previous configuration
+	it('cancels the pending definition updates so they cannot fire afterwards', async () => {
+		dirty(instance)
+		reset(instance)
+		;(instance.setVariableDefinitions as any).mockClear()
+		;(instance.setActionDefinitions as any).mockClear()
+
+		await vi.advanceTimersByTimeAsync(1000)
+		expect(instance.setVariableDefinitions).not.toHaveBeenCalled()
+		expect(instance.setActionDefinitions).not.toHaveBeenCalled()
+	})
+
+	it('cancels the pending feedback check', async () => {
+		dirty(instance)
+		reset(instance)
+		;(instance.checkFeedbacksById as any).mockClear()
+
+		await vi.advanceTimersByTimeAsync(1000)
+		expect(instance.checkFeedbacksById).not.toHaveBeenCalled()
+	})
+
+	it('closes the trap listener', () => {
+		const receiver = { close: vi.fn() }
+		;(instance as any).receiver = receiver
+		reset(instance)
+		expect(receiver.close).toHaveBeenCalled()
+		expect((instance as any).receiver).toBeNull()
+	})
+
+	it('leaves the SNMP session alone, configUpdated reconnects with it replaced', () => {
+		reset(instance)
+		expect(session.close).not.toHaveBeenCalled()
+		expect((instance as any).session).toBe(session)
+	})
+
+	it('destroy closes the SNMP session as well', async () => {
+		await instance.destroy()
+		expect(session.close).toHaveBeenCalled()
+		expect((instance as any).session).toBeNull()
+	})
+
+	it('destroy drops the cache', async () => {
+		dirty(instance)
+		await instance.destroy()
+		expect(instance.oidValues.size).toBe(0)
 	})
 })

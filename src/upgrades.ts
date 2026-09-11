@@ -243,6 +243,34 @@ function v311(
 	return result
 }
 
+/**
+ * Adds the Connection Variables config option, introduced in 3.2.0.
+ *
+ * Defaults to false so existing connections keep their current behaviour, polling only
+ * the OIDs their feedbacks watch, until the option is deliberately turned on.
+ */
+function v320(
+	_context: CompanionUpgradeContext<ModuleConfig>,
+	props: CompanionStaticUpgradeProps<ModuleConfig, ModuleSecrets>,
+): CompanionStaticUpgradeResult<ModuleConfig, ModuleSecrets> {
+	const result: CompanionStaticUpgradeResult<ModuleConfig, ModuleSecrets> = {
+		updatedActions: [],
+		updatedConfig: null,
+		updatedSecrets: null,
+		updatedFeedbacks: [],
+	}
+
+	if (props.config !== null) {
+		const config = props.config
+		if (config.variables === undefined || config.variables === null) {
+			config.variables = false
+			result.updatedConfig = config
+		}
+	}
+
+	return result
+}
+
 export const UpgradeScripts: CompanionStaticUpgradeScript<ModuleConfig, ModuleSecrets>[] = [
 	pre200,
 	v210,
@@ -251,4 +279,5 @@ export const UpgradeScripts: CompanionStaticUpgradeScript<ModuleConfig, ModuleSe
 	v300,
 	v310,
 	v311,
+	v320,
 ]

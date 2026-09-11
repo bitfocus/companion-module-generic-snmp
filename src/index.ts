@@ -12,6 +12,7 @@ import GetConfigFields from './configs.js'
 import type { ModuleConfig, ModuleSecrets } from './configs.js'
 import UpdateActions from './actions.js'
 import UpdateFeedbacks, { FeedbackId } from './feedbacks.js'
+import { GetVariableDefinitions, GetVariableValues } from './variables.js'
 import { UpgradeScripts } from './upgrades.js'
 import { StatusManager } from './status.js'
 import type { InstanceBaseExt, ModuleTypes } from './types.js'
@@ -59,27 +60,23 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 		this.secrets = secrets
 		this.updateActions()
 		this.updateFeedbacks()
+		this.updateVariableDefinitions()
 
 		await this.setAgentAddress()
 		await this.initializeConnection()
 	}
 
 	public async configUpdated(config: ModuleConfig, secrets: ModuleSecrets): Promise<void> {
-		this.pollGeneration++
-		this.oidValues.clear()
-		this.snmpQueue.clear()
-		this.closeListener()
-
-		if (this.pollTimer) {
-			clearTimeout(this.pollTimer)
-			delete this.pollTimer
-		}
+		this.resetConnectionState()
 
 		this.config = config
 		this.secrets = secrets
 
 		this.updateActions()
 		this.updateFeedbacks()
+		// oidValues was cleared above, so this also drops definitions for OIDs that
+		// are no longer cached, and clears the lot if the option has been turned off
+		this.updateVariableDefinitions()
 
 		await this.initializeConnection()
 	}
@@ -87,15 +84,28 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	public async destroy(): Promise<void> {
 		this.log('debug', `destroy ${this.id}:${this.label}`)
 		this.statusManager.destroy()
+		this.resetConnectionState()
+		this.disconnectAgent()
+	}
+
+	/**
+	 * Drops everything tied to the current session: the cached OIDs, queued and pending
+	 * SNMP requests, the poll timer, and the trap listener.
+	 *
+	 * Does not close the SNMP session itself: destroy calls disconnectAgent for that,
+	 * while configUpdated leaves it to connectAgent, which replaces the session anyway.
+	 */
+	private resetConnectionState(): void {
 		this.pollGeneration++
+		this.oidValues.clear()
 		this.snmpQueue.clear()
-		this.throttledFeedbackIdCheck.cancel()
 		this.debouncedUpdateDefinitions.cancel()
+		this.debouncedUpdateVariableDefinitions.cancel()
+		this.throttledFeedbackIdCheck.cancel()
 		if (this.pollTimer) {
 			clearTimeout(this.pollTimer)
 			delete this.pollTimer
 		}
-		this.disconnectAgent()
 		this.closeListener()
 	}
 
@@ -396,7 +406,10 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 			)
 			const isNew = !this.oidValues.has(varbind.oid)
 			this.oidValues.set(varbind.oid, varbind)
-			if (isNew) this.debouncedUpdateDefinitions()
+			if (isNew) {
+				this.debouncedUpdateDefinitions()
+				if (this.config.variables) this.debouncedUpdateVariableDefinitions()
+			}
 			this.oidTracker.getFeedbackIdsForOid(varbind.oid).forEach((id) => this.feedbackIdsToCheck.add(id))
 			if (this.feedbackIdsToCheck.size > 0) this.throttledFeedbackIdCheck()
 		}
@@ -583,9 +596,28 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 			}))
 	}
 
+	/**
+	 * The set of OIDs a poll should request.
+	 *
+	 * Normally this is just the OIDs a feedback is watching. With connection variables
+	 * enabled every cached OID is polled as well, since each one is published as a
+	 * variable that needs refreshing.
+	 *
+	 * The feedback OIDs stay in the list either way. An OID a feedback watches is not
+	 * necessarily in oidValues, because a varbind that came back NoSuchObject,
+	 * NoSuchInstance or EndOfMibView is deliberately not cached, and one that has never
+	 * been reached has nothing to cache. Polling oidValues alone would drop those OIDs
+	 * permanently and the feedback could never recover.
+	 */
+	private getOidsToPoll(): string[] {
+		const trackedOids = this.oidTracker.getOidsToPoll
+		if (!this.config.variables) return trackedOids
+		return Array.from(new Set([...this.oidValues.keys(), ...trackedOids]))
+	}
+
 	private async pollOids(): Promise<void> {
 		const generation = this.pollGeneration
-		const oids = this.oidTracker.getOidsToPoll
+		const oids = this.getOidsToPoll()
 		if (oids.length > 0) {
 			try {
 				await this.getOid(...oids)
@@ -596,6 +628,7 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 
 		// Abort if configUpdated() or destory() fired while awaiting getOid
 		if (generation !== this.pollGeneration) return
+		if (this.config.variables) this.updateVariableValues()
 		if (this.config.interval > 0) {
 			this.pollTimer = setTimeout(() => {
 				this.pollOids().catch(() => {})
@@ -621,6 +654,32 @@ export default class Generic_SNMP extends InstanceBase<ModuleTypes> implements I
 	private updateFeedbacks(): void {
 		this.setFeedbackDefinitions(UpdateFeedbacks(this))
 	}
+
+	/**
+	 * Publishes a connection variable for every cached OID, and seeds their values.
+	 *
+	 * Definitions without values would leave the variables blank until the first poll
+	 * completes, and with polling turned off they would stay blank forever, so the
+	 * current cache contents are published at the same time.
+	 */
+	private updateVariableDefinitions(): void {
+		this.setVariableDefinitions(GetVariableDefinitions(this))
+		this.updateVariableValues()
+	}
+
+	private updateVariableValues(): void {
+		this.setVariableValues(GetVariableValues(this))
+	}
+
+	/**
+	 * Debounced function that updates the connection variable definitions.
+	 *
+	 * Kept separate from debouncedUpdateDefinitions, and on a shorter delay, so a walk
+	 * publishes its variables promptly without redefining them once per returned varbind.
+	 */
+	private debouncedUpdateVariableDefinitions = debounce(() => {
+		this.updateVariableDefinitions()
+	}, 500)
 
 	/**
 	 * Debounced function that updates action and feedback definitions.

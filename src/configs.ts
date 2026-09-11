@@ -17,6 +17,7 @@ export type ModuleConfig = {
 	traps: boolean
 	portBind: number
 	interval: number
+	variables: boolean
 	verbose: boolean
 }
 
@@ -229,6 +230,14 @@ export default function (isDesSelected: boolean): SomeCompanionConfigField[] {
 			max: 3600,
 			default: 0,
 			description: 'Seconds. Set to 0 to turn polling off.',
+		},
+		{
+			type: 'checkbox',
+			id: 'variables',
+			label: 'Connection Variables',
+			default: false,
+			width: 6,
+			description: 'Create connection variables for all cached OIDs, they will be polled each interval',
 		},
 		{
 			type: 'checkbox',
