@@ -1,7 +1,7 @@
 import type Generic_SNMP from './index.js'
 import { UpdateOption, DivisorOption, OidDropdownOptions, EncodingOption } from './options.js'
 import { prepareVarbindForVariableAssignment, isValidSnmpOid, trimOid } from './oidUtils.js'
-import type { CompanionFeedbackDefinitions } from '@companion-module/base'
+import type { CompanionFeedbackDefinitions, JsonPrimitive } from '@companion-module/base'
 // import snmp from 'net-snmp'
 
 export enum FeedbackId {
@@ -17,6 +17,7 @@ export type FeedbackSchema = {
 			update: boolean
 			encoding: BufferEncoding
 		}
+		result: JsonPrimitive
 	}
 }
 
